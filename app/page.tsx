@@ -1,9 +1,12 @@
-import { NavBar } from "@/components/ui/nav-bar";
+import { getSession } from "@/lib/get-session";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return (
-    <div>
-      <NavBar />
-    </div>
-  );
+export default async function HomePage() {
+  const session = await getSession();
+
+  if (session) {
+    redirect("/dashboard");
+  } else {
+    redirect("/auth/signin");
+  }
 }
