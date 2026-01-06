@@ -113,12 +113,16 @@ export default function SignInPage() {
         </CardContent>
 
         <CardFooter className="flex-col gap-2">
-          {/* Optional: OAuth later */}
-          {/*
-          <Button variant="outline" className="w-full">
-            Login with Google
-          </Button>
-          */}
+          <CardFooter className="flex flex-col gap-2">
+            {/* GitHub OAuth button */}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
+            >
+              Sign in with GitHub
+            </Button>
+          </CardFooter>
         </CardFooter>
       </Card>
     </div>
