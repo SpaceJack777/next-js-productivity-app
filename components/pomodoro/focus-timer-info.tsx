@@ -23,7 +23,7 @@ type Pomodoro = {
   updatedAt: Date;
 };
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 8;
 
 export function FocusTimerInfo({ sessions }: { sessions: Pomodoro[] }) {
   const [page, setPage] = useState(1);
@@ -42,7 +42,7 @@ export function FocusTimerInfo({ sessions }: { sessions: Pomodoro[] }) {
       <CardHeader>
         <CardTitle>Recent Pomodoro Sessions</CardTitle>
       </CardHeader>
-      <CardContent className="min-h-75 flex flex-col">
+      <CardContent>
         <div className="grow">
           <Table>
             <TableHeader>
