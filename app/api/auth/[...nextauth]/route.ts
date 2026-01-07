@@ -1,4 +1,5 @@
 // app/api/auth/[...nextauth]/route.ts
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GithubProvider from 'next-auth/providers/github';
 
@@ -9,10 +10,11 @@ import NextAuth, { AuthOptions } from 'next-auth';
 import bcrypt from 'bcryptjs';
 
 export const authOptions: AuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     GithubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
+      clientId: process.env.GITHUB_CLIENT_ID || process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET || process.env.GITHUB_SECRET!,
     }),
     CredentialsProvider({
       name: 'Credentials',
@@ -56,13 +58,19 @@ export const authOptions: AuthOptions = {
     signIn: '/auth/signin',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // Log for debugging
+      console.log('JWT callback:', { token: !!token, user: !!user, account: !!account });
+
       if (user) {
         token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
+      // Log for debugging
+      console.log('Session callback:', { session: !!session, token: !!token });
+
       if (session.user) {
         session.user.id = token.id as string;
       }
