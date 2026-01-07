@@ -1,10 +1,7 @@
 "use client";
 
 import { EndSessionDialog } from "@/components/pomodoro/end-session-dialog";
-import {
-  TimerSettingsDialog,
-  defaultTimerSettings,
-} from "@/components/pomodoro/timer-settings-dialog";
+import { TimerSettingsDialog } from "@/components/pomodoro/timer-settings-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { usePomodoro } from "@/lib/pomodoro/use-pomodoro";
+import { useUserSettings } from "@/hooks/use-user-timer-settings";
 import { type TimerSettings } from "@/lib/validation/pomodoro";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -43,26 +41,6 @@ function formatTime(seconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-const TIMER_SETTINGS_KEY = "pomodoro-timer-settings";
-
-function loadTimerSettings() {
-  try {
-    const saved = localStorage.getItem(TIMER_SETTINGS_KEY);
-    return saved ? { ...JSON.parse(saved) } : defaultTimerSettings;
-  } catch {
-    return defaultTimerSettings;
-  }
-}
-
-function saveTimerSettings(settings: typeof defaultTimerSettings) {
-  if (typeof window === "undefined") return;
-
-  try {
-    localStorage.setItem(TIMER_SETTINGS_KEY, JSON.stringify(settings));
-  } catch (error) {
-    console.warn("Failed to save timer settings:", error);
-  }
-}
 
 type Props = {
   saveAction: (title: string, durationSeconds: number) => Promise<void>;
@@ -89,34 +67,34 @@ function TimerWrapper({
 }
 
 export function FocusTimerCard({ saveAction }: Props) {
-  const [timerSettings, setTimerSettings] = useState(defaultTimerSettings);
+  const { settings: timerSettings, isLoading, updateSettings } = useUserSettings();
   const [currentSessionDuration, setCurrentSessionDuration] =
     useState<number>(25);
-  const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    const settings = loadTimerSettings();
-    setTimerSettings(settings);
-    setCurrentSessionDuration(settings.focusSession);
-    setIsLoading(false);
-  }, []);
+    setCurrentSessionDuration(timerSettings.focusSession);
+  }, [timerSettings.focusSession]);
 
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [sessionStarted, setSessionStarted] = useState(false);
   const hasSavedRef = useRef(false);
   const router = useRouter();
 
-  const handleSettingsChange = (newSettings: TimerSettings) => {
-    setTimerSettings(newSettings);
-    saveTimerSettings(newSettings);
+  const handleSettingsChange = async (newSettings: TimerSettings) => {
+    try {
+      await updateSettings(newSettings);
 
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("pomodoro-timer-state");
-    }
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("pomodoro-timer-state");
+      }
 
-    if (!sessionStarted) {
-      setCurrentSessionDuration(newSettings.focusSession);
+      if (!sessionStarted) {
+        setCurrentSessionDuration(newSettings.focusSession);
+      }
+    } catch (error) {
+      console.error("Failed to update settings:", error);
+      // Could add toast notification here
     }
   };
 
