@@ -1,0 +1,995 @@
+# Next.js 16 Productivity App - Coding Rules & Best Practices
+
+## Tech Stack Overview
+- **Frontend**: Next.js 16 + React 19 + TypeScript + Tailwind CSS + shadcn/ui
+- **Backend**: Next.js API Routes + Prisma 5.22 ORM + Supabase PostgreSQL
+- **Auth**: NextAuth.js
+- **Deployment**: Vercel + Supabase
+- **Validation**: Zod
+- **Bundler**: Turbopack (default in Next.js 16)
+
+## Next.js 16 Specific Best Practices
+
+### 🚀 **Leverage Turbopack**
+- Turbopack is now the default bundler in Next.js 16
+- Significantly faster build times than Webpack
+- Improved hot reloading and development experience
+- No configuration needed - works out of the box
+
+### ⚡ **React Server Components (RSC) First**
+- **Default to Server Components** for all static content
+- Server Components run on the server, reducing client bundle size
+- Only use Client Components (`'use client'`) for interactivity
+- Compose Server and Client Components effectively
+
+```typescript
+// ✅ RSC First Approach
+export default function Dashboard() {
+  // Server Component - runs on server
+  return (
+    <div>
+      <ServerStats />
+      <ClientInteractiveTimer /> {/* Only this needs 'use client' */}
+    </div>
+  );
+}
+```
+
+### 🎯 **Partial Prerendering (PPR)**
+- New experimental feature for hybrid rendering
+- Combines static generation with dynamic islands
+- Enables better performance for mixed static/dynamic content
+- Configure in `next.config.ts`:
+
+```typescript
+// next.config.ts
+export default {
+  experimental: {
+    ppr: true, // Enable Partial Prerendering
+  },
+};
+```
+
+### 🌐 **Edge Runtime & Middleware**
+- Use Edge Runtime for globally distributed functions
+- Deploy middleware closer to users for better performance
+- Ideal for authentication, redirects, and personalization
+
+```typescript
+// middleware.ts - Edge Runtime
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  // Authentication checks
+  // Geo-based redirects
+  // A/B testing logic
+}
+```
+
+## General Rules
+
+### Code Comments
+- **NO explanatory comments** - Code should be self-documenting
+- **NO inline comments** explaining what code does
+- **NO function/method comments** above implementations
+- **NO code block comments** - Use descriptive variable/function names instead
+- Write readable code that explains itself through naming and structure
+
+### Project Structure
+- Follow Next.js 13+ App Router conventions
+- Use feature-based organization over type-based
+- Keep components, hooks, and utilities in respective directories
+- Use barrel exports (`index.ts`) for clean imports
+
+### File Organization
+```
+app/                    # Next.js App Router
+  (admin)/             # Route groups
+  api/                 # API routes
+  auth/                # Auth pages
+components/            # React components
+  ui/                  # shadcn/ui components
+lib/                   # Utilities and configurations
+server/                # Server actions and queries
+prisma/               # Database schema and migrations
+types/                # TypeScript type definitions
+hooks/                # Custom React hooks
+```
+
+## TypeScript Rules
+
+### Type Safety
+- **Strict mode**: Always use strict TypeScript settings
+- **No `any`**: Avoid `any` type - use proper types or `unknown`
+- **Interface vs Type**: Use `interface` for objects, `type` for unions/aliases
+- **Generic constraints**: Use constrained generics when possible
+
+```typescript
+// ✅ Good
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+type UserRole = 'admin' | 'user' | 'moderator';
+
+// ❌ Bad
+interface User {
+  id: any;
+  name: any;
+}
+```
+
+### Import/Export
+- Use named exports over default exports
+- Group imports: React, third-party libraries, internal modules
+- Use absolute imports with `@/` prefix
+- Barrel exports for clean imports
+
+```typescript
+// ✅ Good
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { prisma } from '@/prisma/prisma';
+import { savePomodoro } from '@/server/pomodoro/actions';
+
+// ❌ Bad
+import React, { useState } from 'react';
+import Button from '@/components/ui/button';
+import * as actions from '@/server/pomodoro/actions';
+```
+
+## React/Next.js Rules
+
+### Components
+- Use functional components with hooks
+- Prefer custom hooks for reusable logic
+- Use TypeScript for all component props
+- Follow component naming conventions
+
+```typescript
+// ✅ Good
+interface UserCardProps {
+  user: User;
+  onEdit?: (user: User) => void;
+}
+
+export function UserCard({ user, onEdit }: UserCardProps) {
+  return (
+    <Card>
+      <h3>{user.name}</h3>
+      {onEdit && <Button onClick={() => onEdit(user)}>Edit</Button>}
+    </Card>
+  );
+}
+
+// ❌ Bad - no TypeScript, default export
+export default function UserCard({ user, onEdit }) {
+  return <div>{user.name}</div>;
+}
+```
+
+### Server Components vs Client Components
+- Use Server Components by default
+- Mark Client Components with `'use client'` directive
+- Minimize Client Components usage
+
+```typescript
+// ✅ Server Component (default)
+export default function Dashboard() {
+  return <div>Server rendered content</div>;
+}
+
+// ✅ Client Component (when needed)
+'use client';
+
+export function InteractiveTimer() {
+  const [time, setTime] = useState(0);
+  // Client-side logic here
+}
+```
+
+### Data Fetching
+- Use Server Actions for mutations
+- Use `fetch` in Server Components for data loading
+- Prefer server-side data fetching over client-side
+
+```typescript
+// ✅ Server Action
+'use server';
+
+export async function createPomodoro(data: PomodoroData) {
+  const session = await getSession();
+  return await prisma.pomodoro.create({
+    data: {
+      ...data,
+      userId: session.user.id,
+    },
+  });
+}
+
+// ✅ Server Component data fetching
+export default async function PomodoroList() {
+  const pomodoros = await prisma.pomodoro.findMany({
+    where: { userId: session.user.id },
+  });
+
+  return <PomodoroTable data={pomodoros} />;
+}
+```
+
+## 📋 **Junior/Mid-Level Developer Patterns**
+
+**Focus**: Practical, clean code that gets you hired without over-engineering.
+
+### **Recommended Architecture:**
+1. **Server Actions** for simple operations (Next.js preferred)
+2. **API Routes** for complex/complex operations
+3. **Zod validation** for type safety
+4. **Organized Prisma queries** (not scattered everywhere)
+5. **Clean error handling** with consistent patterns
+
+### **What Signals to Employers:**
+- ✅ **Modern Next.js knowledge** (Server Actions, App Router)
+- ✅ **Clean code habits** (organized, readable)
+- ✅ **TypeScript proficiency** (validation, types)
+- ✅ **Database skills** (Prisma, efficient queries)
+- ✅ **Real-world experience** (what juniors actually build)
+
+### **Why This Level Works:**
+- **Interview Ready**: Shows good practices without complexity
+- **Realistic**: This is what most junior jobs expect
+- **Scalable**: Easy to refactor to services later when needed
+- **Maintainable**: Clean separation without over-abstraction
+
+---
+
+## Database & Prisma Rules
+
+### Schema Design
+- Use `cuid()` for IDs instead of `autoincrement`
+- Always include `createdAt` and `updatedAt` timestamps
+- Use enums for fixed value sets
+- Proper foreign key relationships
+
+```prisma
+// ✅ Good
+model Pomodoro {
+  id        String   @id @default(cuid())
+  title     String
+  duration  Int
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// ❌ Bad - no timestamps, no relations
+model Pomodoro {
+  id     Int     @id @default(autoincrement())
+  title  String
+  userId String
+}
+```
+
+### Database Queries
+- **Group related queries** in dedicated functions (don't scatter them)
+- **Use Prisma's fluent API** with proper error handling
+- **Include relations** when needed with `include` or `select`
+- **Prefer Server Actions** over API routes for simple operations
+- **Keep business logic** close to where it's used
+
+```typescript
+// ✅ GOOD - Server Action with organized database logic
+'use server';
+
+export async function createPomodoro(formData: FormData) {
+  const session = await getSession();
+
+  const data = {
+    title: formData.get('title'),
+    duration: parseInt(formData.get('duration')),
+    userId: session.user.id,
+  };
+
+  // Zod validation
+  const validatedData = createPomodoroSchema.parse(data);
+
+  // Database operation
+  const pomodoro = await prisma.pomodoro.create({
+    data: validatedData,
+    include: { user: { select: { name: true } } }
+  });
+
+  revalidatePath('/dashboard');
+  return pomodoro;
+}
+
+// ✅ GOOD - API Route for complex operations
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const userId = searchParams.get('userId');
+
+  if (!userId) {
+    return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+  }
+
+  const pomodoros = await prisma.pomodoro.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+    select: {
+      id: true,
+      title: true,
+      duration: true,
+      createdAt: true,
+    }
+  });
+
+  return NextResponse.json(pomodoros);
+}
+```
+
+## Authentication & Security Rules
+
+### NextAuth.js
+- Use JWT strategy for sessions
+- Validate sessions on protected routes
+- Proper error handling for auth failures
+
+```typescript
+// ✅ Good - session validation
+import { getSession } from '@/lib/get-session';
+
+export default async function ProtectedPage() {
+  const session = await getSession();
+
+  if (!session) {
+    redirect('/auth/signin');
+  }
+
+  return <div>Welcome {session.user.name}!</div>;
+}
+```
+
+### API Routes
+- Validate input with Zod schemas
+- Use proper HTTP status codes
+- Include error handling and logging
+
+```typescript
+// ✅ Good - validation and error handling
+import { z } from 'zod';
+
+const createPomodoroSchema = z.object({
+  title: z.string().min(1),
+  duration: z.number().positive(),
+});
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const data = createPomodoroSchema.parse(body);
+
+    const pomodoro = await prisma.pomodoro.create({
+      data: {
+        ...data,
+        userId: session.user.id,
+      },
+    });
+
+    return NextResponse.json(pomodoro, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    console.error('API Error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Styling & UI Rules
+
+### Tailwind CSS
+- Use design tokens and consistent spacing
+- Leverage Tailwind's utility classes effectively
+- Use the `cn()` utility for conditional classes
+
+```typescript
+// ✅ Good - utility function for class merging
+import { cn } from '@/lib/utils';
+
+interface ButtonProps {
+  variant?: 'primary' | 'secondary';
+  className?: string;
+}
+
+export function CustomButton({ variant, className }: ButtonProps) {
+  return (
+    <button
+      className={cn(
+        'px-4 py-2 rounded-md font-medium',
+        variant === 'primary' && 'bg-blue-500 text-white',
+        variant === 'secondary' && 'bg-gray-200 text-gray-800',
+        className
+      )}
+    >
+      Click me
+    </button>
+  );
+}
+```
+
+### shadcn/ui Components
+- Use shadcn/ui components as building blocks
+- Customize via className prop and CSS variables
+- Follow component composition patterns
+
+```typescript
+// ✅ Good - component composition
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+export function PomodoroCard({ session }: { session: Pomodoro }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{session.title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p>Duration: {session.duration} minutes</p>
+        <Button>Start Session</Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+## Validation Rules
+
+### Zod Schemas
+- Define schemas for all input validation
+- Use descriptive error messages
+- Reuse schemas across client and server
+
+```typescript
+// ✅ Good - reusable validation schema
+import { z } from 'zod';
+
+export const pomodoroSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(100, 'Title too long'),
+  duration: z.number().int().positive('Duration must be positive'),
+});
+
+export type PomodoroInput = z.infer<typeof pomodoroSchema>;
+
+// Server-side validation
+export async function createPomodoro(data: unknown) {
+  const validatedData = pomodoroSchema.parse(data);
+  // ... create pomodoro
+}
+```
+
+## Error Handling
+
+### Client-side Errors
+- Use React Error Boundaries for component errors
+- Handle async operations with proper loading/error states
+- Provide user-friendly error messages
+
+```typescript
+// ✅ Good - error boundary pattern
+'use client';
+
+export function ErrorFallback({ error, resetError }: { error: Error; resetError: () => void }) {
+  return (
+    <div className="error-container">
+      <h2>Something went wrong</h2>
+      <p>{error.message}</p>
+      <Button onClick={resetError}>Try again</Button>
+    </div>
+  );
+}
+```
+
+### Server-side Errors
+- Use consistent error response format
+- Log errors appropriately
+- Don't expose sensitive information
+
+```typescript
+// ✅ Good - consistent error responses
+export class ApiError extends Error {
+  constructor(public statusCode: number, message: string) {
+    super(message);
+  }
+}
+
+export function handleApiError(error: unknown) {
+  if (error instanceof ApiError) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.statusCode }
+    );
+  }
+
+  console.error('Unexpected error:', error);
+  return NextResponse.json(
+    { error: 'Internal server error' },
+    { status: 500 }
+  );
+}
+```
+
+## Performance Optimization (Next.js 16)
+
+### 🎯 **Advanced Rendering Strategies**
+- **Partial Prerendering**: Mix static and dynamic content efficiently
+- **Streaming SSR**: Progressive loading with React Suspense
+- **Optimistic UI**: Immediate feedback for better UX
+
+```typescript
+// ✅ Streaming with Suspense
+import { Suspense } from 'react';
+
+export default function Dashboard() {
+  return (
+    <div>
+      <Header /> {/* Loads immediately */}
+      <Suspense fallback={<StatsSkeleton />}>
+        <AsyncStats /> {/* Streams in */}
+      </Suspense>
+      <Suspense fallback={<ChartSkeleton />}>
+        <HeavyChart /> {/* Loads last */}
+      </Suspense>
+    </div>
+  );
+}
+```
+
+### 🚀 **Next.js 16 Caching Strategies**
+- **Request Memoization**: Automatic deduplication of requests
+- **Full Route Cache**: Static HTML caching
+- **Router Cache**: Client-side route caching
+
+```typescript
+// ✅ Advanced caching with revalidate
+export default async function BlogPost({ params }: { params: { slug: string } }) {
+  // ISR with revalidation
+  const post = await fetch(`https://api.example.com/posts/${params.slug}`, {
+    next: {
+      revalidate: 3600, // 1 hour
+      tags: ['posts', params.slug], // Tag-based revalidation
+    },
+  });
+
+  return <PostContent post={post} />;
+}
+
+// ✅ On-demand revalidation
+'use server';
+
+export async function updatePost(slug: string) {
+  // Update database
+  await prisma.post.update({ where: { slug }, data: { ... } });
+
+  // Revalidate specific cache tags
+  revalidateTag('posts');
+  revalidateTag(slug);
+}
+```
+
+### 📊 **Database & Data Fetching Optimization**
+- **Connection Pooling**: Efficient database connections
+- **Query Optimization**: Use Prisma's query optimization
+- **Edge Computing**: Run database queries closer to users
+
+```typescript
+// ✅ Optimized Prisma queries with batching
+export async function getDashboardData(userId: string) {
+  const [user, recentPomodoros, stats] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true },
+    }),
+    prisma.pomodoro.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    }),
+    // Since all pomodoros are completed by design, no need for completion stats
+  ]);
+
+  return { user, recentPomodoros, stats };
+}
+```
+
+### 🖼️ **Asset Optimization**
+- **Next.js Image Component**: Automatic optimization and WebP conversion
+- **Font Optimization**: Automatic font loading optimization
+- **Script Optimization**: Strategic script loading
+
+```typescript
+// ✅ Optimized images with priority loading
+import Image from 'next/image';
+
+export function HeroImage() {
+  return (
+    <Image
+      src="/hero.jpg"
+      alt="Hero"
+      width={1200}
+      height={600}
+      priority // Loads immediately
+      placeholder="blur" // Blur placeholder
+      sizes="(max-width: 768px) 100vw, 50vw"
+    />
+  );
+}
+```
+
+### 🤖 **AI Integration (2025 Trend)**
+- **Vercel AI SDK**: Integrate AI capabilities
+- **Streaming AI Responses**: Real-time AI interactions
+- **AI-Powered Features**: Smart recommendations and personalization
+
+```typescript
+// ✅ AI integration example
+'use client';
+
+import { useAI } from '@/hooks/use-ai';
+
+export function SmartSuggestions() {
+  const { suggestions, isLoading } = useAI('/api/suggestions');
+
+  if (isLoading) return <div>Getting personalized suggestions...</div>;
+
+  return (
+    <div>
+      {suggestions.map(suggestion => (
+        <div key={suggestion.id}>{suggestion.text}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Modern Tooling & Development
+
+### 🚀 **Recommended Tools for Next.js 16**
+```json
+// package.json recommendations
+{
+  "scripts": {
+    "dev": "next dev --turbopack", // Explicit Turbopack usage
+    "build": "next build",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write ."
+  }
+}
+```
+
+### 🧪 **Testing Strategy (Next.js 16 Best Practices)**
+- **Vitest**: Fast, modern test runner (recommended over Jest)
+- **Playwright**: Modern E2E testing (better than Cypress)
+- **Testing Library**: Component testing utilities
+
+```typescript
+// ✅ Vitest configuration (vitest.config.ts)
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./__tests__/setup.ts'],
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './'),
+    },
+  },
+});
+
+// ✅ Playwright E2E test
+import { test, expect } from '@playwright/test';
+
+test('pomodoro timer workflow', async ({ page }) => {
+  await page.goto('/focus-timer');
+
+  await page.click('button:has-text("Start")');
+  await page.waitForTimeout(1000);
+  await page.click('button:has-text("Pause")');
+
+  await expect(page.locator('[role="status"]')).toHaveText('Paused');
+});
+```
+
+### Test Structure
+- `__tests__/` directory for all tests
+- Unit tests for utilities and hooks
+- Integration tests for API routes and Server Actions
+- E2E tests for critical user flows
+
+```typescript
+// ✅ Comprehensive testing approach
+// __tests__/unit/lib/utils.test.ts
+// __tests__/integration/api/auth.test.ts
+// __tests__/e2e/pomodoro-workflow.test.ts
+// __tests__/components/PomodoroTimer.test.tsx
+```
+
+## Deployment & DevOps (Next.js 16 + Vercel)
+
+### 🚀 **Vercel-Optimized Configuration**
+```typescript
+// next.config.ts - Vercel optimized
+import type { NextConfig } from 'next';
+
+const config: NextConfig = {
+  // Enable Turbopack for faster builds
+  experimental: {
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+    // Enable PPR for hybrid rendering (when stable)
+    // ppr: true,
+  },
+
+  // Optimize images automatically
+  images: {
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+  },
+
+  // Security headers
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
+    ];
+  },
+};
+
+export default config;
+```
+
+### 🔧 **Environment & Configuration Management**
+- **Vercel Environment Variables**: Separate environments (Production, Preview, Development)
+- **Runtime Configuration**: Use `NEXT_PUBLIC_` for client-side variables
+- **Secret Management**: Use Vercel's encrypted environment variables
+
+```typescript
+// ✅ Comprehensive env validation
+import { z } from 'zod';
+
+const envSchema = z.object({
+  // Database
+  DATABASE_URL: z.string().url(),
+  DIRECT_URL: z.string().url(), // For migrations
+
+  // Auth
+  NEXTAUTH_SECRET: z.string().min(32),
+  NEXTAUTH_URL: z.string().url(),
+
+  // OAuth
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_CLIENT_SECRET: z.string().min(1),
+
+  // Optional: Analytics, Monitoring
+  VERCEL_ENV: z.enum(['development', 'preview', 'production']).optional(),
+});
+
+export const env = envSchema.parse(process.env);
+
+// ✅ Runtime config for client-side
+export const publicEnv = {
+  VERCEL_ENV: process.env.VERCEL_ENV,
+  NEXT_PUBLIC_APP_URL: process.env.NEXTAUTH_URL,
+} as const;
+```
+
+### 📊 **Monitoring & Analytics**
+- **Vercel Analytics**: Built-in performance monitoring
+- **Error Tracking**: Sentry or Vercel Error Monitoring
+- **Real User Monitoring (RUM)**: Performance insights
+
+```typescript
+// ✅ Vercel Analytics integration
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Analytics /> {/* Performance tracking */}
+        <SpeedInsights /> {/* Core Web Vitals */}
+      </body>
+    </html>
+  );
+}
+```
+
+### 🔄 **CI/CD Pipeline**
+- **Vercel Preview Deployments**: Automatic deployments for PRs
+- **Branch Protection**: Require reviews and tests
+- **Automated Testing**: Run tests on every push
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+```
+
+### 🗄️ **Database Deployment**
+- **Vercel Postgres**: Managed PostgreSQL with automatic scaling
+- **Prisma Accelerate**: Connection pooling and caching
+- **Migration Strategy**: Safe migrations with rollbacks
+
+```typescript
+// ✅ Prisma Accelerate for production performance
+import { PrismaClient } from '@prisma/client';
+import { withAccelerate } from '@prisma/extension-accelerate';
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  }).$extends(withAccelerate());
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+```
+
+## Code Quality Rules
+
+### Linting & Formatting
+- Use ESLint with Next.js config
+- Consistent code formatting
+- Pre-commit hooks for quality checks
+
+### Commit Messages
+- Use conventional commit format
+- Be descriptive but concise
+
+```bash
+# ✅ Good commit messages
+feat: add pomodoro timer component
+fix: resolve auth session validation bug
+refactor: simplify database query logic
+docs: update API documentation
+```
+
+### Documentation
+- Document complex business logic
+- Add JSDoc for public APIs
+- Keep README updated
+
+```typescript
+// ✅ Good - documented function
+/**
+ * Creates a new pomodoro session for the authenticated user
+ * @param data - The pomodoro session data
+ * @returns Promise<Pomodoro> - The created pomodoro session
+ * @throws {Error} When user is not authenticated
+ */
+export async function createPomodoro(data: PomodoroInput): Promise<Pomodoro> {
+  // implementation
+}
+```
+
+## Security Rules
+
+### Input Validation
+- Validate all user inputs
+- Sanitize data before database operations
+- Use parameterized queries (handled by Prisma)
+
+### Authentication
+- Protect sensitive routes
+- Use HTTPS in production
+- Implement proper session management
+
+### Data Protection
+- Never log sensitive information
+- Use proper password hashing
+- Implement rate limiting for API endpoints
+
+---
+
+## 📚 **Additional Resources & 2025 Trends**
+
+### 🎯 **Next.js 16 Key Features to Leverage**
+- **Turbopack**: 700x faster builds than Webpack
+- **React 19**: New features like Actions, useOptimistic, useFormState
+- **Partial Prerendering**: Hybrid static/dynamic rendering
+- **Enhanced Edge Runtime**: Better performance for global apps
+
+### 🚀 **2025 Development Trends**
+- **AI Integration**: Vercel AI SDK for intelligent features
+- **Edge Computing**: Global deployment with instant cold starts
+- **Streaming UI**: Progressive loading with Suspense boundaries
+- **Component-Driven Development**: Storybook 8 with AI documentation
+
+### 📖 **Recommended Learning Resources**
+- [Next.js 16 Documentation](https://nextjs.org/docs)
+- [Vercel AI SDK](https://vercel.com/docs/ai)
+- [React 19 Upgrade Guide](https://react.dev/blog/2024/04/25/react-19)
+- [Prisma Accelerate](https://www.prisma.io/docs/accelerate)
+
+### 🎥 **Video Tutorials**
+- [Next.js 16 Setup Like a Pro](https://www.youtube.com/watch?v=LomOqSlDSUc)
+- [Partial Prerendering Deep Dive](https://www.youtube.com/watch?v=8wC6h8v8K)
+- [Turbopack Performance Guide](https://www.youtube.com/watch?v=dFz2O3MvO4)
+
+---
+
+## ✅ **Implementation Checklist**
+
+- [ ] Project structure follows feature-based organization
+- [ ] Turbopack enabled for development (`--turbopack`)
+- [ ] Server Components used by default
+- [ ] Zod schemas for all data validation
+- [ ] NextAuth.js configured with proper providers
+- [ ] Database optimized with Prisma Accelerate
+- [ ] Comprehensive testing with Vitest + Playwright
+- [ ] Vercel deployment with proper environment variables
+- [ ] Performance monitoring with Vercel Analytics
+- [ ] Security headers and middleware implemented
+
+**Remember**: These rules represent the current best practices for Next.js 16 as of January 2025. Stay updated with the Next.js blog and changelog for future enhancements!
+
+**Remember**: Code is read more than it's written. Prioritize readability, maintainability, and consistency above all else.

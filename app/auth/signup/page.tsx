@@ -1,12 +1,9 @@
 // app/auth/signup/page.tsx
-"use client";
+'use client';
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { signIn } from 'next-auth/react';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardAction,
@@ -15,41 +12,46 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+import { useState } from 'react';
 
 export default function SignUpPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
   });
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+      setError('Passwords do not match');
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError('Password must be at least 6 characters');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
@@ -60,27 +62,27 @@ export default function SignUpPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Something went wrong");
+        setError(data.error || 'Something went wrong');
         setLoading(false);
         return;
       }
 
-      const result = await signIn("credentials", {
+      const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
         redirect: false,
       });
 
       if (result?.error) {
-        setError("Account created but sign in failed");
+        setError('Account created but sign in failed');
         setLoading(false);
         return;
       }
 
-      router.push("/dashboard");
+      router.push('/dashboard');
       router.refresh();
     } catch {
-      setError("Something went wrong");
+      setError('Something went wrong');
       setLoading(false);
     }
   };
@@ -170,7 +172,7 @@ export default function SignUpPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account..." : "Create account"}
+              {loading ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
         </CardContent>
