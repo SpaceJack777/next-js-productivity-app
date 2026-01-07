@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Sidebar,
@@ -6,26 +6,22 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from '@/components/animate-ui/components/radix/sidebar';
-import { NavMain } from '@/components/nav-main';
-import { NavProjects } from '@/components/nav-projects';
-import { NavUser } from '@/components/nav-user';
-import { TeamSwitcher } from '@/components/team-switcher';
-import { useSession } from '@/lib/session-context';
+} from "@/components/animate-ui/components/radix/sidebar";
+import { NavMain } from "@/components/nav-main";
+// import { NavProjects } from "@/components/nav-projects";
+import { NavUser } from "@/components/nav-user";
+import { TeamSwitcher } from "@/components/team-switcher";
+import { useSession } from "@/lib/session-context";
 
-import * as React from 'react';
+import * as React from "react";
 
 import {
   AudioWaveform,
-  BookOpen,
   Clock,
   Command,
-  Frame,
   GalleryVerticalEnd,
   LayoutDashboard,
-  Map,
-  PieChart,
-} from 'lucide-react';
+} from "lucide-react";
 
 // This is sample data.
 const dataExample = {
@@ -36,72 +32,72 @@ const dataExample = {
   // },
   teams: [
     {
-      name: 'Acme Inc',
+      name: "Acme Inc",
       logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
+      plan: "Enterprise",
     },
     {
-      name: 'Acme Corp.',
+      name: "Acme Corp.",
       logo: AudioWaveform,
-      plan: 'Startup',
+      plan: "Startup",
     },
     {
-      name: 'Evil Corp.',
+      name: "Evil Corp.",
       logo: Command,
-      plan: 'Free',
+      plan: "Free",
     },
   ],
   navMain: [
     {
-      title: 'Dashboard',
-      url: '/dashboard',
+      title: "Dashboard",
+      url: "/dashboard",
       icon: LayoutDashboard,
     },
     {
-      title: 'Focus Timer',
-      url: '/focus-timer',
+      title: "Focus Timer",
+      url: "/focus-timer",
       icon: Clock,
     },
-    {
-      title: 'Documentation',
-      url: '#',
-      icon: BookOpen,
-      items: [
-        {
-          title: 'Introduction',
-          url: '#',
-        },
-        {
-          title: 'Get Started',
-          url: '#',
-        },
-        {
-          title: 'Tutorials',
-          url: '#',
-        },
-        {
-          title: 'Changelog',
-          url: '#',
-        },
-      ],
-    },
+    // {
+    //   title: 'Documentation',
+    //   url: '#',
+    //   icon: BookOpen,
+    //   items: [
+    //     {
+    //       title: 'Introduction',
+    //       url: '#',
+    //     },
+    //     {
+    //       title: 'Get Started',
+    //       url: '#',
+    //     },
+    //     {
+    //       title: 'Tutorials',
+    //       url: '#',
+    //     },
+    //     {
+    //       title: 'Changelog',
+    //       url: '#',
+    //     },
+    //   ],
+    // },
   ],
   projects: [
-    {
-      name: 'Design Engineering',
-      url: '#',
-      icon: Frame,
-    },
-    {
-      name: 'Sales & Marketing',
-      url: '#',
-      icon: PieChart,
-    },
-    {
-      name: 'Travel',
-      url: '#',
-      icon: Map,
-    },
+    // {
+    //   name: 'Design Engineering',
+    //   url: '#',
+    //   icon: Frame,
+    // },
+    // {
+    //   name: 'Sales & Marketing',
+    //   url: '#',
+    //   icon: PieChart,
+    // },
+    // {
+    //   name: 'Travel',
+    //   url: '#',
+    //   icon: Map,
+    // },
   ],
 };
 
@@ -110,9 +106,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const data = {
     user: {
-      name: session.user?.name || 'User',
-      email: session.user?.email || '',
-      avatar: session.user?.image || '/avatars/shadcn.jpg',
+      name: session.user?.name || "User",
+      email: session.user?.email || "",
+      avatar: session.user?.image || "/avatars/shadcn.jpg",
     },
     ...dataExample,
   };
@@ -124,7 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />
