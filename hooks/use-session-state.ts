@@ -2,6 +2,17 @@ import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
+function debounce<TArgs extends unknown[], TReturn>(
+  func: (...args: TArgs) => TReturn,
+  delay: number,
+): (...args: TArgs) => void {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: TArgs) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
+
 interface Timer {
   reset: () => void;
   isFinished: boolean;
@@ -17,7 +28,6 @@ export function useSessionState({
   timerSettings,
   saveAction,
 }: UseSessionStateProps) {
-  // Helper functions for localStorage
   const getStoredSessionDuration = (): number => {
     if (typeof window === "undefined") return timerSettings.focusSession;
     const saved = localStorage.getItem("currentSessionDuration");
@@ -49,7 +59,6 @@ export function useSessionState({
     }
   };
 
-  // State
   const [storedSessionDuration, setStoredSessionDurationState] =
     useState<number>(getStoredSessionDuration);
   const [sessionStarted, setSessionStarted] = useState<boolean>(
@@ -57,23 +66,25 @@ export function useSessionState({
   );
   const [isPending, startTransition] = useTransition();
 
-  // Derive current session duration: use stored value if session running, otherwise use settings
   const currentSessionDuration = useMemo(() => {
     return sessionStarted ? storedSessionDuration : timerSettings.focusSession;
   }, [sessionStarted, storedSessionDuration, timerSettings.focusSession]);
 
-  // Refs
   const hasSavedRef = useRef(false);
   const router = useRouter();
 
-  // Persist to localStorage
-  useEffect(() => {
-    setStoredSessionStarted(sessionStarted);
-  }, [sessionStarted]);
+  const debouncedSetStoredSession = useMemo(
+    () =>
+      debounce((started: boolean, duration: number) => {
+        setStoredSessionStarted(started);
+        setStoredSessionDuration(duration);
+      }, 150),
+    [],
+  );
 
   useEffect(() => {
-    setStoredSessionDuration(storedSessionDuration);
-  }, [storedSessionDuration]);
+    debouncedSetStoredSession(sessionStarted, storedSessionDuration);
+  }, [sessionStarted, storedSessionDuration, debouncedSetStoredSession]);
 
   // Session management functions
   const startSession = useCallback(() => {

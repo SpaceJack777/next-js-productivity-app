@@ -18,7 +18,7 @@ import { type TimerSettings } from "@/lib/validation/pomodoro";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 
 interface Timer {
   remainingSeconds: number;
@@ -83,6 +83,16 @@ export function FocusTimerCard({ saveAction }: Props) {
     setHasHydrated(true);
   }, []);
 
+  // Memoize complex render logic to prevent unnecessary recalculations
+  const nextSessionIndicator = useMemo(() =>
+    hasHydrated &&
+    currentSessionDuration !== timerSettings.focusSession &&
+    sessionStarted ? (
+      <> • Next session: {timerSettings.focusSession} min</>
+    ) : null,
+    [hasHydrated, currentSessionDuration, timerSettings.focusSession, sessionStarted]
+  );
+
   const handleSettingsChange = async (newSettings: TimerSettings) => {
     try {
       await updateSettings(newSettings);
@@ -91,13 +101,17 @@ export function FocusTimerCard({ saveAction }: Props) {
     }
   };
 
+  // Memoize the timer update callback to prevent unnecessary re-renders
+  const memoizedTimerUpdate = useMemo(
+    () => (timer: Timer) => handleTimerUpdate(timer, currentSessionDuration),
+    [handleTimerUpdate, currentSessionDuration]
+  );
+
   return (
     <TimerWrapper
       key={`timer-${currentSessionDuration}`}
       duration={currentSessionDuration}
-      onTimerUpdate={(timer) =>
-        handleTimerUpdate(timer, currentSessionDuration)
-      }
+      onTimerUpdate={memoizedTimerUpdate}
       render={(timer) => {
         const totalSeconds = currentSessionDuration * 60;
         const elapsedSeconds = totalSeconds - timer.remainingSeconds;
@@ -129,11 +143,7 @@ export function FocusTimerCard({ saveAction }: Props) {
                   ) : (
                     <>
                       Current session: {currentSessionDuration} min
-                      {hasHydrated &&
-                        currentSessionDuration !== timerSettings.focusSession &&
-                        sessionStarted && (
-                          <> • Next session: {timerSettings.focusSession} min</>
-                        )}
+                      {nextSessionIndicator}
                     </>
                   )}
                 </CardDescription>
