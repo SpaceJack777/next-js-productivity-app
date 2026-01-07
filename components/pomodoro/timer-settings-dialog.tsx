@@ -74,7 +74,7 @@ export function TimerSettingsDialog({
 
     setLocalSettings((prev) => ({
       ...prev,
-      [key]: value === "" ? prev[key] : isNaN(numValue) ? prev[key] : numValue,
+      [key]: value === "" ? "" : isNaN(numValue) ? prev[key] : numValue,
     }));
 
     if (clampTimeoutRef.current) {
@@ -82,29 +82,38 @@ export function TimerSettingsDialog({
     }
 
     clampTimeoutRef.current = setTimeout(() => {
-      if (!isNaN(numValue)) {
-        setLocalSettings((prev) => {
-          const currentValue = prev[key];
-          let clampedValue = currentValue;
+      setLocalSettings((prev) => {
+        const currentValue = prev[key];
+        let clampedValue = currentValue;
 
+        if (typeof currentValue === "string" && currentValue === "") {
+          return prev;
+        }
+
+        const numValue =
+          typeof currentValue === "string"
+            ? parseInt(currentValue)
+            : currentValue;
+
+        if (!isNaN(numValue)) {
           switch (key) {
             case "focusSession":
-              clampedValue = Math.max(5, Math.min(180, currentValue));
+              clampedValue = Math.max(5, Math.min(180, numValue));
               break;
             case "shortBreak":
-              clampedValue = Math.max(1, Math.min(30, currentValue));
+              clampedValue = Math.max(1, Math.min(30, numValue));
               break;
             case "longBreak":
-              clampedValue = Math.max(5, Math.min(60, currentValue));
+              clampedValue = Math.max(5, Math.min(60, numValue));
               break;
           }
+        }
 
-          return {
-            ...prev,
-            [key]: clampedValue,
-          };
-        });
-      }
+        return {
+          ...prev,
+          [key]: clampedValue,
+        };
+      });
     }, 700);
   };
 
