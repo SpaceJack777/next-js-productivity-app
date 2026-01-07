@@ -16,6 +16,7 @@ import {
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { usePomodoro } from "@/lib/pomodoro/use-pomodoro";
 import { type TimerSettings } from "@/lib/validation/pomodoro";
+import { Spinner } from "@/components/ui/spinner";
 
 import { useRouter } from "next/navigation";
 
@@ -155,7 +156,13 @@ export function FocusTimerCard({ saveAction }: Props) {
               <CardHeader className="text-center">
                 <CardTitle>Focus Session</CardTitle>
                 <CardDescription suppressHydrationWarning>
-                  Current session: {currentSessionDuration} min
+                  Current session:{" "}
+                  {isLoading ? (
+                    <Spinner className="inline-flex size-2" />
+                  ) : (
+                    currentSessionDuration
+                  )}{" "}
+                  min
                   {currentSessionDuration !== timerSettings.focusSession && (
                     <> • Next session: {timerSettings.focusSession} min</>
                   )}
@@ -170,8 +177,11 @@ export function FocusTimerCard({ saveAction }: Props) {
                         className="text-6xl font-mono font-semibold tabular-nums"
                         suppressHydrationWarning
                       >
-                        {formatTime(timer.remainingSeconds)}{" "}
-                        {isLoading ? "Loading..." : ""}
+                        {isLoading ? (
+                          <Spinner className="size-10" />
+                        ) : (
+                          formatTime(timer.remainingSeconds)
+                        )}
                       </div>
                     </div>
                   </CircularProgress>
