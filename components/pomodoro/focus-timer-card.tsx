@@ -1,27 +1,31 @@
-'use client';
+"use client";
 
-import { EndSessionDialog } from '@/components/pomodoro/end-session-dialog';
-import { TimerSettingsDialog } from '@/components/pomodoro/timer-settings-dialog';
-import { Button } from '@/components/ui/button';
+import { EndSessionDialog } from "@/components/pomodoro/end-session-dialog";
+import {
+  TimerSettingsDialog,
+  defaultTimerSettings,
+} from "@/components/pomodoro/timer-settings-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { CircularProgress } from '@/components/ui/circular-progress';
-import { usePomodoro } from '@/lib/pomodoro/use-pomodoro';
+} from "@/components/ui/card";
+import { CircularProgress } from "@/components/ui/circular-progress";
+import { usePomodoro } from "@/lib/pomodoro/use-pomodoro";
+import { type TimerSettings } from "@/lib/validation/pomodoro";
 
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
-
-interface TimerSettings {
-  focusSession: number;
-  shortBreak: number;
-  longBreak: number;
-}
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 
 interface Timer {
   remainingSeconds: number;
@@ -35,37 +39,27 @@ interface Timer {
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-const TIMER_SETTINGS_KEY = 'pomodoro-timer-settings';
+const TIMER_SETTINGS_KEY = "pomodoro-timer-settings";
 
-const defaultSettings: TimerSettings = {
-  focusSession: 25,
-  shortBreak: 5,
-  longBreak: 15,
-};
-
-function loadTimerSettings(): TimerSettings {
-  if (typeof window === 'undefined') return defaultSettings;
-
+function loadTimerSettings() {
   try {
     const saved = localStorage.getItem(TIMER_SETTINGS_KEY);
-    return saved
-      ? { ...defaultSettings, ...JSON.parse(saved) }
-      : defaultSettings;
+    return saved ? { ...JSON.parse(saved) } : defaultTimerSettings;
   } catch {
-    return defaultSettings;
+    return defaultTimerSettings;
   }
 }
 
-function saveTimerSettings(settings: TimerSettings) {
-  if (typeof window === 'undefined') return;
+function saveTimerSettings(settings: typeof defaultTimerSettings) {
+  if (typeof window === "undefined") return;
 
   try {
     localStorage.setItem(TIMER_SETTINGS_KEY, JSON.stringify(settings));
   } catch (error) {
-    console.warn('Failed to save timer settings:', error);
+    console.warn("Failed to save timer settings:", error);
   }
 }
 
@@ -73,7 +67,6 @@ type Props = {
   saveAction: (title: string, durationSeconds: number) => Promise<void>;
 };
 
-// Wrapper component that gets remounted when duration changes
 function TimerWrapper({
   duration,
   onTimerUpdate,
@@ -87,19 +80,25 @@ function TimerWrapper({
 
   useEffect(() => {
     onTimerUpdate(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timer.isFinished, timer.isRunning, onTimerUpdate]);
 
   return <>{render(timer)}</>;
 }
 
 export function FocusTimerCard({ saveAction }: Props) {
-  const [timerSettings, setTimerSettings] =
-    useState<TimerSettings>(loadTimerSettings);
-  const [currentSessionDuration, setCurrentSessionDuration] = useState<number>(
-    timerSettings.focusSession
-  );
+  const [timerSettings, setTimerSettings] = useState(defaultTimerSettings);
+  const [currentSessionDuration, setCurrentSessionDuration] =
+    useState<number>(25);
+  const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    const settings = loadTimerSettings();
+    setTimerSettings(settings);
+    setCurrentSessionDuration(settings.focusSession);
+    setIsLoading(false);
+  }, []);
+
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [sessionStarted, setSessionStarted] = useState(false);
   const hasSavedRef = useRef(false);
@@ -108,8 +107,6 @@ export function FocusTimerCard({ saveAction }: Props) {
   const handleSettingsChange = (newSettings: TimerSettings) => {
     setTimerSettings(newSettings);
     saveTimerSettings(newSettings);
-    // Settings are saved but current session continues with its duration
-    // Next session will use the new settings
   };
 
   const handleTimerUpdate = useCallback(
@@ -117,15 +114,12 @@ export function FocusTimerCard({ saveAction }: Props) {
       if (timer.isFinished && !hasSavedRef.current) {
         hasSavedRef.current = true;
         startTransition(() => {
-          saveAction('Focus Session', currentSessionDuration * 60).then(() => {
-            // Apply new settings for next session
+          saveAction("Focus Session", currentSessionDuration * 60).then(() => {
             setCurrentSessionDuration(timerSettings.focusSession);
-            // Refresh the page to show updated session list
             router.refresh();
           });
         });
       } else if (!timer.isRunning && !timer.isFinished) {
-        // Reset hasSaved when timer is reset (not running and not finished)
         hasSavedRef.current = false;
       }
     },
@@ -135,12 +129,12 @@ export function FocusTimerCard({ saveAction }: Props) {
       saveAction,
       router,
       startTransition,
-    ]
+    ],
   );
 
   return (
     <TimerWrapper
-      key={`timer-${timerSettings.focusSession}`}
+      key={`timer-${currentSessionDuration}`}
       duration={currentSessionDuration}
       onTimerUpdate={handleTimerUpdate}
       render={(timer) => {
@@ -151,7 +145,13 @@ export function FocusTimerCard({ saveAction }: Props) {
 
         return (
           <>
-            <Card>
+            <Card className="relative">
+              <div className="absolute top-4 right-4 z-10">
+                <TimerSettingsDialog
+                  settings={timerSettings}
+                  onSettingsChange={handleSettingsChange}
+                />
+              </div>
               <CardHeader className="text-center">
                 <CardTitle>Focus Session</CardTitle>
                 <CardDescription suppressHydrationWarning>
@@ -160,12 +160,6 @@ export function FocusTimerCard({ saveAction }: Props) {
                     <> • Next session: {timerSettings.focusSession} min</>
                   )}
                 </CardDescription>
-                <div className="mt-4 flex justify-center">
-                  <TimerSettingsDialog
-                    settings={timerSettings}
-                    onSettingsChange={handleSettingsChange}
-                  />
-                </div>
               </CardHeader>
 
               <CardContent className="flex flex-col items-center justify-between gap-8 min-h-[400px]">
@@ -176,7 +170,8 @@ export function FocusTimerCard({ saveAction }: Props) {
                         className="text-6xl font-mono font-semibold tabular-nums"
                         suppressHydrationWarning
                       >
-                        {formatTime(timer.remainingSeconds)}
+                        {formatTime(timer.remainingSeconds)}{" "}
+                        {isLoading ? "Loading..." : ""}
                       </div>
                     </div>
                   </CircularProgress>
@@ -228,7 +223,7 @@ export function FocusTimerCard({ saveAction }: Props) {
                         size="lg"
                         className="min-w-[140px]"
                       >
-                        {sessionStarted ? 'Resume' : 'Start Focus'}
+                        {sessionStarted ? "Resume" : "Start Focus"}
                       </Button>
                       {sessionStarted && (
                         <Button
@@ -255,8 +250,8 @@ export function FocusTimerCard({ saveAction }: Props) {
                   hasSavedRef.current = true;
                   startTransition(() => {
                     saveAction(
-                      'Focus Session (Ended Early)',
-                      elapsedMinutes * 60
+                      "Focus Session (Ended Early)",
+                      elapsedMinutes * 60,
                     ).then(() => {
                       timer.reset();
                       setCurrentSessionDuration(timerSettings.focusSession);

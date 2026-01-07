@@ -1,7 +1,8 @@
-'use server';
+"use server";
 
-import { getSession } from '@/lib/get-session';
-import { prisma } from '@/prisma/prisma';
+import { getSession } from "@/lib/get-session";
+import { prisma } from "@/prisma/prisma";
+import { savePomodoroSchema } from "@/lib/validation/pomodoro";
 
 /**
  * Save a Pomodoro session
@@ -10,13 +11,18 @@ import { prisma } from '@/prisma/prisma';
  */
 export async function savePomodoro(title: string, durationSeconds: number) {
   const session = await getSession();
-  if (!session?.user?.id) throw new Error('Not authenticated');
+  if (!session?.user?.id) throw new Error("Not authenticated");
+
+  const validatedData = savePomodoroSchema.parse({
+    title,
+    durationSeconds,
+  });
 
   await prisma.pomodoro.create({
     data: {
       userId: session.user.id,
-      title, // required field in your schema
-      duration: durationSeconds,
+      title: validatedData.title,
+      duration: validatedData.durationSeconds,
     },
   });
 }
