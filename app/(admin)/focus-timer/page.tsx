@@ -13,7 +13,7 @@ export default async function Page() {
   const sessions = await getPomodoroSessions();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <FocusTimerCard saveAction={savePomodoro} />
       <FocusTimerInfo sessions={sessions} />
     </div>
