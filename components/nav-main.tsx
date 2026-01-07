@@ -1,11 +1,6 @@
 'use client';
 
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
@@ -14,7 +9,12 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from '@/components/ui/sidebar';
+} from '@/components/animate-ui/components/radix/sidebar';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

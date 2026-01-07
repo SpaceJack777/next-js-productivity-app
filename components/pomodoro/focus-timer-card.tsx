@@ -10,11 +10,10 @@ import {
 } from '@/components/ui/card';
 import { CircularProgress } from '@/components/ui/circular-progress';
 import { usePomodoro } from '@/lib/pomodoro/use-pomodoro';
-import { TimerSettings } from './timer-settings';
 
 import { useRouter } from 'next/navigation';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useTransition } from 'react';
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -27,16 +26,12 @@ type Props = {
 };
 
 export function FocusTimerCard({ saveAction }: Props) {
-  const [focusTime, setFocusTime] = useState(25); // minutes
-  const [shortBreak, setShortBreak] = useState(5); // minutes
-  const [longBreak, setLongBreak] = useState(15); // minutes
-
-  const timer = usePomodoro(focusTime);
+  const timer = usePomodoro(1);
   const [isPending, startTransition] = useTransition();
   const hasSavedRef = useRef(false);
   const router = useRouter();
 
-  const totalSeconds = focusTime * 60;
+  const totalSeconds = 1 * 60;
   const elapsedSeconds = totalSeconds - timer.remainingSeconds;
   const progress = Math.min(elapsedSeconds / totalSeconds, 1);
 
@@ -44,7 +39,7 @@ export function FocusTimerCard({ saveAction }: Props) {
     if (timer.isFinished && !hasSavedRef.current) {
       hasSavedRef.current = true;
       startTransition(() => {
-        saveAction('Focus Session', focusTime * 60).then(() => {
+        saveAction('Focus Session', 1 * 60).then(() => {
           // Refresh the page to show updated session list
           router.refresh();
         });
@@ -58,20 +53,8 @@ export function FocusTimerCard({ saveAction }: Props) {
   return (
     <Card>
       <CardHeader className="text-center">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <CardTitle>Focus Session</CardTitle>
-            <CardDescription>Stay focused for {focusTime} minutes</CardDescription>
-          </div>
-          <TimerSettings
-            focusTime={focusTime}
-            shortBreak={shortBreak}
-            longBreak={longBreak}
-            onFocusTimeChange={setFocusTime}
-            onShortBreakChange={setShortBreak}
-            onLongBreakChange={setLongBreak}
-          />
-        </div>
+        <CardTitle>Focus Session</CardTitle>
+        <CardDescription>Stay focused for 25 minutes</CardDescription>
       </CardHeader>
 
       <CardContent className="flex flex-col items-center justify-between gap-8 min-h-[400px]">
