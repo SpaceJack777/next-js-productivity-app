@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Dialog,
@@ -8,8 +8,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/animate-ui/components/radix/dialog';
-import { Button } from '@/components/ui/button';
+} from "@/components/animate-ui/components/radix/dialog";
+import { Button } from "@/components/ui/button";
 
 interface EndSessionDialogProps {
   open: boolean;
@@ -31,7 +31,7 @@ export function EndSessionDialog({
           <DialogTitle>End Session Early?</DialogTitle>
           <DialogDescription>
             You&apos;ve focused for {elapsedMinutes} minute
-            {elapsedMinutes !== 1 ? 's' : ''}.
+            {elapsedMinutes !== 1 ? "s" : ""}.
             {elapsedMinutes >= 5 ? (
               <> This session will be saved to your records.</>
             ) : (

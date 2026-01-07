@@ -13,18 +13,12 @@ import {
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { usePomodoro } from "@/lib/pomodoro/use-pomodoro";
 import { useUserSettings } from "@/hooks/use-user-timer-settings";
+import { useSessionState } from "@/hooks/use-session-state";
 import { type TimerSettings } from "@/lib/validation/pomodoro";
 import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { useRouter } from "next/navigation";
-
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import React, { useEffect, useState } from "react";
 
 interface Timer {
   remainingSeconds: number;
@@ -40,7 +34,6 @@ function formatTime(seconds: number) {
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
-
 
 type Props = {
   saveAction: (title: string, durationSeconds: number) => Promise<void>;
@@ -67,70 +60,54 @@ function TimerWrapper({
 }
 
 export function FocusTimerCard({ saveAction }: Props) {
-  const { settings: timerSettings, isLoading, updateSettings } = useUserSettings();
-  const [currentSessionDuration, setCurrentSessionDuration] =
-    useState<number>(25);
-  const [isPending, startTransition] = useTransition();
+  const {
+    settings: timerSettings,
+    isLoading,
+    updateSettings,
+  } = useUserSettings();
 
-  useEffect(() => {
-    setCurrentSessionDuration(timerSettings.focusSession);
-  }, [timerSettings.focusSession]);
+  const {
+    currentSessionDuration,
+    sessionStarted,
+    isPending,
+    startSession,
+    resetSession,
+    endSessionEarly,
+    handleTimerUpdate,
+  } = useSessionState({ timerSettings, saveAction });
 
   const [showEndDialog, setShowEndDialog] = useState(false);
-  const [sessionStarted, setSessionStarted] = useState(false);
-  const hasSavedRef = useRef(false);
-  const router = useRouter();
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  React.useEffect(() => {
+    setHasHydrated(true);
+  }, []);
 
   const handleSettingsChange = async (newSettings: TimerSettings) => {
     try {
       await updateSettings(newSettings);
-
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("pomodoro-timer-state");
-      }
-
-      if (!sessionStarted) {
-        setCurrentSessionDuration(newSettings.focusSession);
-      }
     } catch (error) {
       console.error("Failed to update settings:", error);
-      // Could add toast notification here
     }
   };
-
-  const handleTimerUpdate = useCallback(
-    (timer: Timer) => {
-      if (timer.isFinished && !hasSavedRef.current) {
-        hasSavedRef.current = true;
-        startTransition(() => {
-          saveAction("Focus Session", currentSessionDuration * 60).then(() => {
-            setCurrentSessionDuration(timerSettings.focusSession);
-            router.refresh();
-          });
-        });
-      } else if (!timer.isRunning && !timer.isFinished) {
-        hasSavedRef.current = false;
-      }
-    },
-    [
-      currentSessionDuration,
-      timerSettings.focusSession,
-      saveAction,
-      router,
-      startTransition,
-    ],
-  );
 
   return (
     <TimerWrapper
       key={`timer-${currentSessionDuration}`}
       duration={currentSessionDuration}
-      onTimerUpdate={handleTimerUpdate}
+      onTimerUpdate={(timer) =>
+        handleTimerUpdate(timer, currentSessionDuration)
+      }
       render={(timer) => {
         const totalSeconds = currentSessionDuration * 60;
         const elapsedSeconds = totalSeconds - timer.remainingSeconds;
         const progress = Math.min(elapsedSeconds / totalSeconds, 1);
         const elapsedMinutes = Math.ceil(elapsedSeconds / 60);
+
+        const handleEndSessionConfirm = () => {
+          endSessionEarly(timer, elapsedMinutes);
+          setShowEndDialog(false);
+        };
 
         return (
           <>
@@ -143,18 +120,22 @@ export function FocusTimerCard({ saveAction }: Props) {
               </div>
               <CardHeader className="text-center">
                 <CardTitle>Focus Session</CardTitle>
-                <CardDescription suppressHydrationWarning>
-                  Current session:{" "}
+                <CardDescription
+                  suppressHydrationWarning
+                  className="text-center"
+                >
                   {isLoading ? (
-                    <Spinner className="inline-flex size-2" />
+                    <Skeleton className="h-4 w-50 mt-1 mx-auto" />
                   ) : (
-                    currentSessionDuration
-                  )}{" "}
-                  min
-                  {currentSessionDuration !== timerSettings.focusSession &&
-                    sessionStarted && (
-                      <> • Next session: {timerSettings.focusSession} min</>
-                    )}
+                    <>
+                      Current session: {currentSessionDuration} min
+                      {hasHydrated &&
+                        currentSessionDuration !== timerSettings.focusSession &&
+                        sessionStarted && (
+                          <> • Next session: {timerSettings.focusSession} min</>
+                        )}
+                    </>
+                  )}
                 </CardDescription>
               </CardHeader>
 
@@ -205,7 +186,7 @@ export function FocusTimerCard({ saveAction }: Props) {
                     <Button
                       onClick={() => {
                         timer.reset();
-                        setSessionStarted(false);
+                        resetSession();
                       }}
                       size="lg"
                       className="min-w-[140px]"
@@ -217,14 +198,16 @@ export function FocusTimerCard({ saveAction }: Props) {
                       <Button
                         onClick={() => {
                           timer.start();
-                          setSessionStarted(true);
+                          startSession();
                         }}
                         size="lg"
                         className="min-w-[140px]"
                       >
-                        {sessionStarted ? "Resume" : "Start Focus"}
+                        <span suppressHydrationWarning>
+                          {sessionStarted ? "Resume" : "Start Focus"}
+                        </span>
                       </Button>
-                      {sessionStarted && (
+                      {hasHydrated && sessionStarted && (
                         <Button
                           variant="outline"
                           onClick={() => setShowEndDialog(true)}
@@ -243,27 +226,7 @@ export function FocusTimerCard({ saveAction }: Props) {
             <EndSessionDialog
               open={showEndDialog}
               onOpenChange={setShowEndDialog}
-              onConfirm={() => {
-                if (elapsedMinutes >= 5 && !hasSavedRef.current) {
-                  hasSavedRef.current = true;
-                  startTransition(() => {
-                    saveAction(
-                      "Focus Session (Ended Early)",
-                      elapsedMinutes * 60,
-                    ).then(() => {
-                      timer.reset();
-                      setCurrentSessionDuration(timerSettings.focusSession);
-                      setShowEndDialog(false);
-                      router.refresh();
-                    });
-                  });
-                } else {
-                  timer.reset();
-                  setCurrentSessionDuration(timerSettings.focusSession);
-                  setSessionStarted(false);
-                  setShowEndDialog(false);
-                }
-              }}
+              onConfirm={handleEndSessionConfirm}
               elapsedMinutes={elapsedMinutes}
             />
           </>

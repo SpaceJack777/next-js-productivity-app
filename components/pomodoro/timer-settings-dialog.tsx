@@ -11,7 +11,6 @@ import {
 } from "@/components/animate-ui/components/radix/dialog";
 import { Button } from "@/components/ui/button";
 import { SettingsForm } from "@/components/settings-input";
-import { updateUserSettings } from "@/server/user-timer-settings/actions";
 import {
   type TimerSettings,
   timerSettingsSchema,
@@ -19,7 +18,7 @@ import {
 
 import { useState, useRef, useEffect } from "react";
 
-import { Settings, Loader2 } from "lucide-react";
+import { Settings } from "lucide-react";
 
 export const defaultTimerSettings: TimerSettings = {
   focusSession: 25,
@@ -38,7 +37,6 @@ export function TimerSettingsDialog({
 }: TimerSettingsDialogProps) {
   const [open, setOpen] = useState(false);
   const [localSettings, setLocalSettings] = useState<TimerSettings>(settings);
-  const [isSaving, setIsSaving] = useState(false);
   const clampTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -53,18 +51,13 @@ export function TimerSettingsDialog({
     };
   }, []);
 
-  const handleSave = async () => {
-    setIsSaving(true);
+  const handleSave = () => {
     try {
       const validatedSettings = timerSettingsSchema.parse(localSettings);
-      await updateUserSettings(validatedSettings);
       onSettingsChange(validatedSettings);
       setOpen(false);
-    } catch (error) {
-      console.error("Failed to save settings:", error);
-      // Could add toast notification here
-    } finally {
-      setIsSaving(false);
+    } catch {
+      return;
     }
   };
 
@@ -160,19 +153,10 @@ export function TimerSettingsDialog({
         </DialogHeader>
         <SettingsForm settings={settingsForm} />
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+          <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Settings"
-            )}
-          </Button>
+          <Button onClick={handleSave}>Save Settings</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
