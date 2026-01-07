@@ -1,6 +1,5 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@/components/animate-ui/components/radix/dialog';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -46,10 +46,10 @@ export function TimerSettingsDialog({
   };
 
   const updateSetting = (key: keyof TimerSettings, value: string) => {
-    const numValue = parseInt(value) || 1;
+    const numValue = parseInt(value) || 5;
     setLocalSettings((prev) => ({
       ...prev,
-      [key]: Math.max(1, Math.min(60, numValue)), // Clamp between 1-60 minutes
+      [key]: Math.max(5, Math.min(180, numValue)), // Clamp between 5-180 minutes
     }));
   };
 
@@ -65,7 +65,7 @@ export function TimerSettingsDialog({
         <DialogHeader>
           <DialogTitle>Timer Settings</DialogTitle>
           <DialogDescription>
-            Configure your focus session and break durations (1-60 minutes).
+            Configure your focus session and break durations (5-180 minutes).
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -77,8 +77,8 @@ export function TimerSettingsDialog({
               <Input
                 id="focus-session"
                 type="number"
-                min="1"
-                max="60"
+                min="5"
+                max="180"
                 value={localSettings.focusSession}
                 onChange={(e) => updateSetting('focusSession', e.target.value)}
               />
@@ -94,7 +94,7 @@ export function TimerSettingsDialog({
                 id="short-break"
                 type="number"
                 min="1"
-                max="60"
+                max="30"
                 value={localSettings.shortBreak}
                 onChange={(e) => updateSetting('shortBreak', e.target.value)}
               />
@@ -109,7 +109,7 @@ export function TimerSettingsDialog({
               <Input
                 id="long-break"
                 type="number"
-                min="1"
+                min="5"
                 max="60"
                 value={localSettings.longBreak}
                 onChange={(e) => updateSetting('longBreak', e.target.value)}
