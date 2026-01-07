@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/prisma/prisma";
+import { prisma } from '@/prisma/prisma';
+
+import { NextResponse } from 'next/server';
+
+import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   try {
@@ -9,8 +11,8 @@ export async function POST(req: Request) {
 
     if (!name || !email || !password) {
       return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
+        { error: 'Missing required fields' },
+        { status: 400 }
       );
     }
 
@@ -20,8 +22,8 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "User already exists" },
-        { status: 400 },
+        { error: 'User already exists' },
+        { status: 400 }
       );
     }
 
@@ -37,16 +39,16 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       {
-        message: "User created successfully",
+        message: 'User created successfully',
         user: { id: user.id, email: user.email, name: user.name },
       },
-      { status: 201 },
+      { status: 201 }
     );
   } catch (error) {
-    console.error("Signup error:", error);
+    console.error('Signup error:', error);
     return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 },
+      { error: 'Something went wrong' },
+      { status: 500 }
     );
   }
 }

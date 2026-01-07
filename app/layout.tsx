@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
-import { Providers } from "@/components/Providers";
-import "./globals.css";
+import type { Metadata } from 'next';
+
+import { Providers } from '@/components/Providers';
+
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Productivity App",
-  description: "Your productivity companion",
+  title: 'Productivity App',
+  description: 'Your productivity companion',
 };
 
 export default function RootLayout({
