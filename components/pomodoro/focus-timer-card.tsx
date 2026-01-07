@@ -14,11 +14,12 @@ import { CircularProgress } from "@/components/ui/circular-progress";
 import { usePomodoro } from "@/lib/pomodoro/use-pomodoro";
 import { useUserSettings } from "@/hooks/use-user-timer-settings";
 import { useSessionState } from "@/hooks/use-session-state";
+import { invalidateSessionsCache } from "@/components/pomodoro/pomodoro-sessions-client";
 import { type TimerSettings } from "@/lib/validation/pomodoro";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 
 interface Timer {
   remainingSeconds: number;
@@ -66,6 +67,15 @@ export function FocusTimerCard({ saveAction }: Props) {
     updateSettings,
   } = useUserSettings();
 
+  const memoizedSaveAction = useCallback(
+    async (title: string, durationSeconds: number) => {
+      const result = await saveAction(title, durationSeconds);
+      invalidateSessionsCache();
+      return result;
+    },
+    [saveAction],
+  );
+
   const {
     currentSessionDuration,
     sessionStarted,
@@ -74,7 +84,7 @@ export function FocusTimerCard({ saveAction }: Props) {
     resetSession,
     endSessionEarly,
     handleTimerUpdate,
-  } = useSessionState({ timerSettings, saveAction });
+  } = useSessionState({ timerSettings, saveAction: memoizedSaveAction });
 
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [hasHydrated, setHasHydrated] = useState(false);
@@ -83,14 +93,19 @@ export function FocusTimerCard({ saveAction }: Props) {
     setHasHydrated(true);
   }, []);
 
-  // Memoize complex render logic to prevent unnecessary recalculations
-  const nextSessionIndicator = useMemo(() =>
-    hasHydrated &&
-    currentSessionDuration !== timerSettings.focusSession &&
-    sessionStarted ? (
-      <> • Next session: {timerSettings.focusSession} min</>
-    ) : null,
-    [hasHydrated, currentSessionDuration, timerSettings.focusSession, sessionStarted]
+  const nextSessionIndicator = useMemo(
+    () =>
+      hasHydrated &&
+      currentSessionDuration !== timerSettings.focusSession &&
+      sessionStarted ? (
+        <> • Next session: {timerSettings.focusSession} min</>
+      ) : null,
+    [
+      hasHydrated,
+      currentSessionDuration,
+      timerSettings.focusSession,
+      sessionStarted,
+    ],
   );
 
   const handleSettingsChange = async (newSettings: TimerSettings) => {
@@ -101,17 +116,16 @@ export function FocusTimerCard({ saveAction }: Props) {
     }
   };
 
-  // Memoize the timer update callback to prevent unnecessary re-renders
-  const memoizedTimerUpdate = useMemo(
-    () => (timer: Timer) => handleTimerUpdate(timer, currentSessionDuration),
-    [handleTimerUpdate, currentSessionDuration]
+  const handleTimerUpdateStable = useCallback(
+    (timer: Timer) => handleTimerUpdate(timer, currentSessionDuration),
+    [handleTimerUpdate, currentSessionDuration],
   );
 
   return (
     <TimerWrapper
-      key={`timer-${currentSessionDuration}`}
+      key={`timer-${currentSessionDuration}-${sessionStarted}`}
       duration={currentSessionDuration}
-      onTimerUpdate={memoizedTimerUpdate}
+      onTimerUpdate={handleTimerUpdateStable}
       render={(timer) => {
         const totalSeconds = currentSessionDuration * 60;
         const elapsedSeconds = totalSeconds - timer.remainingSeconds;

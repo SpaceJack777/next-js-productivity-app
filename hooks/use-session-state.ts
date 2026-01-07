@@ -64,6 +64,7 @@ export function useSessionState({
   const [sessionStarted, setSessionStarted] = useState<boolean>(
     getStoredSessionStarted,
   );
+
   const [isPending, startTransition] = useTransition();
 
   const currentSessionDuration = useMemo(() => {
@@ -86,7 +87,21 @@ export function useSessionState({
     debouncedSetStoredSession(sessionStarted, storedSessionDuration);
   }, [sessionStarted, storedSessionDuration, debouncedSetStoredSession]);
 
-  // Session management functions
+  useEffect(() => {
+    if (typeof window !== "undefined" && !sessionStarted) {
+      localStorage.setItem(
+        "currentSessionDuration",
+        timerSettings.focusSession.toString(),
+      );
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStoredSessionDurationState(timerSettings.focusSession);
+    }
+  }, [
+    timerSettings.focusSession,
+    sessionStarted,
+    setStoredSessionDurationState,
+  ]);
+
   const startSession = useCallback(() => {
     setSessionStarted(true);
   }, []);
@@ -118,7 +133,14 @@ export function useSessionState({
         clearStoredSession();
       }
     },
-    [timerSettings.focusSession, saveAction, startTransition, router],
+    [
+      timerSettings.focusSession,
+      saveAction,
+      startTransition,
+      router,
+      setStoredSessionDurationState,
+      setSessionStarted,
+    ],
   );
 
   const handleTimerComplete = useCallback(
@@ -135,7 +157,14 @@ export function useSessionState({
         });
       }
     },
-    [timerSettings.focusSession, saveAction, startTransition, router],
+    [
+      timerSettings.focusSession,
+      saveAction,
+      startTransition,
+      router,
+      setStoredSessionDurationState,
+      setSessionStarted,
+    ],
   );
 
   const handleTimerUpdate = useCallback(

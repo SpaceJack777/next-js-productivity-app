@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -8,11 +8,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 
-import { AppPagination } from '../app-pagination';
-
-import { useMemo, useState } from 'react';
+import { AppPagination } from "../app-pagination";
+import { FocusTimerTableSkeleton } from "./focus-timer-table-skeleton";
+import { useMemo, useState } from "react";
 
 type Pomodoro = {
   id: string;
@@ -24,14 +24,20 @@ type Pomodoro = {
 
 const PAGE_SIZE = 8;
 
-export function FocusTimerInfo({ sessions }: { sessions: Pomodoro[] }) {
+export function FocusTimerInfo({
+  sessions,
+  loading,
+}: {
+  sessions: Pomodoro[];
+  loading?: boolean;
+}) {
   const [page, setPage] = useState(1);
 
   const { currentSessions, totalPages } = useMemo(() => {
     const totalPages = Math.ceil(sessions.length / PAGE_SIZE);
     const currentSessions = sessions.slice(
       (page - 1) * PAGE_SIZE,
-      page * PAGE_SIZE
+      page * PAGE_SIZE,
     );
     return { currentSessions, totalPages };
   }, [sessions, page]);
@@ -52,16 +58,18 @@ export function FocusTimerInfo({ sessions }: { sessions: Pomodoro[] }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentSessions.length > 0 ? (
+              {loading ? (
+                <FocusTimerTableSkeleton />
+              ) : currentSessions.length > 0 ? (
                 currentSessions.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.title}</TableCell>
                     <TableCell>{Math.round(s.duration / 60)} min</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {new Date(s.createdAt).toISOString().split('T')[0]}{' '}
+                      {new Date(s.createdAt).toISOString().split("T")[0]}{" "}
                       {new Date(s.createdAt).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </TableCell>
                   </TableRow>

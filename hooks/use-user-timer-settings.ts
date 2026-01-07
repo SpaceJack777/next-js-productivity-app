@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { type TimerSettings } from "@/lib/validation/pomodoro";
-import { getUserSettings, updateUserSettings } from "@/server/user-timer-settings/actions";
+import {
+  getUserSettings,
+  updateUserSettings,
+} from "@/server/user-timer-settings/actions";
 
 export const defaultTimerSettings: TimerSettings = {
   focusSession: 25,
@@ -8,36 +11,57 @@ export const defaultTimerSettings: TimerSettings = {
   longBreak: 15,
 };
 
+let settingsCache: TimerSettings | null = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000;
+
 export function useUserSettings() {
-  const [settings, setSettings] = useState<TimerSettings>(defaultTimerSettings);
-  const [isLoading, setIsLoading] = useState(true);
+  const [settings, setSettings] = useState<TimerSettings>(() => {
+    if (settingsCache && Date.now() - cacheTimestamp < CACHE_DURATION) {
+      return settingsCache;
+    }
+    return defaultTimerSettings;
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    return !(settingsCache && Date.now() - cacheTimestamp < CACHE_DURATION);
+  });
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const userSettings = await getUserSettings();
-        setSettings(userSettings);
-      } catch (error) {
-        console.warn("Failed to load user settings:", error);
-        // Fall back to defaults if loading fails
-        setSettings(defaultTimerSettings);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadSettings();
+    if (!settingsCache || Date.now() - cacheTimestamp >= CACHE_DURATION) {
+      const loadSettings = async () => {
+        try {
+          const userSettings = await getUserSettings();
+          settingsCache = userSettings;
+          cacheTimestamp = Date.now();
+          setSettings(userSettings);
+        } catch (error) {
+          console.warn("Failed to load user settings:", error);
+          if (settingsCache) {
+            setSettings(settingsCache);
+          } else {
+            setSettings(defaultTimerSettings);
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadSettings();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   const updateSettings = async (newSettings: TimerSettings) => {
     setIsSaving(true);
     try {
       await updateUserSettings(newSettings);
+      settingsCache = newSettings;
+      cacheTimestamp = Date.now();
       setSettings(newSettings);
     } catch (error) {
       console.error("Failed to save user settings:", error);
-      throw error; // Re-throw so the component can handle the error
+      throw error;
     } finally {
       setIsSaving(false);
     }
