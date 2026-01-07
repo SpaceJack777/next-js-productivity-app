@@ -79,9 +79,11 @@ function TimerWrapper({
 }) {
   const timer = usePomodoro(duration);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     onTimerUpdate(timer);
   }, [timer.isFinished, timer.isRunning, onTimerUpdate]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   return <>{render(timer)}</>;
 }
@@ -108,6 +110,14 @@ export function FocusTimerCard({ saveAction }: Props) {
   const handleSettingsChange = (newSettings: TimerSettings) => {
     setTimerSettings(newSettings);
     saveTimerSettings(newSettings);
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("pomodoro-timer-state");
+    }
+
+    if (!sessionStarted) {
+      setCurrentSessionDuration(newSettings.focusSession);
+    }
   };
 
   const handleTimerUpdate = useCallback(
@@ -163,9 +173,10 @@ export function FocusTimerCard({ saveAction }: Props) {
                     currentSessionDuration
                   )}{" "}
                   min
-                  {currentSessionDuration !== timerSettings.focusSession && (
-                    <> • Next session: {timerSettings.focusSession} min</>
-                  )}
+                  {currentSessionDuration !== timerSettings.focusSession &&
+                    sessionStarted && (
+                      <> • Next session: {timerSettings.focusSession} min</>
+                    )}
                 </CardDescription>
               </CardHeader>
 
@@ -255,7 +266,6 @@ export function FocusTimerCard({ saveAction }: Props) {
               open={showEndDialog}
               onOpenChange={setShowEndDialog}
               onConfirm={() => {
-                // Only save if at least 5 minutes elapsed
                 if (elapsedMinutes >= 5 && !hasSavedRef.current) {
                   hasSavedRef.current = true;
                   startTransition(() => {
@@ -270,7 +280,6 @@ export function FocusTimerCard({ saveAction }: Props) {
                     });
                   });
                 } else {
-                  // Just reset without saving
                   timer.reset();
                   setCurrentSessionDuration(timerSettings.focusSession);
                   setSessionStarted(false);

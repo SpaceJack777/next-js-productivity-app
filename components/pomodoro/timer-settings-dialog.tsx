@@ -140,7 +140,7 @@ export function TimerSettingsDialog({
           <Settings className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[400px] w-100">
+      <DialogContent className="max-w-[400px] w-100" onEnter={handleSave}>
         <DialogHeader>
           <DialogTitle>Timer Settings</DialogTitle>
           <DialogDescription>

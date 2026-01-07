@@ -69,6 +69,13 @@ export function middleware(request: NextRequest) {
 
 ## General Rules
 
+### Code Comments
+- **NO explanatory comments** - Code should be self-documenting
+- **NO inline comments** explaining what code does
+- **NO function/method comments** above implementations
+- **NO code block comments** - Use descriptive variable/function names instead
+- Write readable code that explains itself through naming and structure
+
 ### Project Structure
 - Follow Next.js 13+ App Router conventions
 - Use feature-based organization over type-based
