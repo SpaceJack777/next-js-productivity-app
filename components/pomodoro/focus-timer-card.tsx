@@ -1,5 +1,6 @@
 'use client';
 
+import { TimerSettingsDialog } from '@/components/pomodoro/timer-settings-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,7 +14,13 @@ import { usePomodoro } from '@/lib/pomodoro/use-pomodoro';
 
 import { useRouter } from 'next/navigation';
 
-import { useEffect, useRef, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
+
+interface TimerSettings {
+  focusSession: number;
+  shortBreak: number;
+  longBreak: number;
+}
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -21,40 +28,94 @@ function formatTime(seconds: number) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+const TIMER_SETTINGS_KEY = 'pomodoro-timer-settings';
+
+const defaultSettings: TimerSettings = {
+  focusSession: 25,
+  shortBreak: 5,
+  longBreak: 15,
+};
+
+function loadTimerSettings(): TimerSettings {
+  if (typeof window === 'undefined') return defaultSettings;
+
+  try {
+    const saved = localStorage.getItem(TIMER_SETTINGS_KEY);
+    return saved
+      ? { ...defaultSettings, ...JSON.parse(saved) }
+      : defaultSettings;
+  } catch {
+    return defaultSettings;
+  }
+}
+
+function saveTimerSettings(settings: TimerSettings) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    localStorage.setItem(TIMER_SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.warn('Failed to save timer settings:', error);
+  }
+}
+
 type Props = {
   saveAction: (title: string, durationSeconds: number) => Promise<void>;
 };
 
 export function FocusTimerCard({ saveAction }: Props) {
-  const timer = usePomodoro(1);
+  const [timerSettings, setTimerSettings] =
+    useState<TimerSettings>(loadTimerSettings);
+  const timer = usePomodoro(timerSettings.focusSession);
   const [isPending, startTransition] = useTransition();
   const hasSavedRef = useRef(false);
   const router = useRouter();
 
-  const totalSeconds = 1 * 60;
+  const totalSeconds = timerSettings.focusSession * 60;
   const elapsedSeconds = totalSeconds - timer.remainingSeconds;
   const progress = Math.min(elapsedSeconds / totalSeconds, 1);
+
+  const handleSettingsChange = (newSettings: TimerSettings) => {
+    setTimerSettings(newSettings);
+    saveTimerSettings(newSettings);
+  };
 
   useEffect(() => {
     if (timer.isFinished && !hasSavedRef.current) {
       hasSavedRef.current = true;
       startTransition(() => {
-        saveAction('Focus Session', 1 * 60).then(() => {
-          // Refresh the page to show updated session list
-          router.refresh();
-        });
+        saveAction('Focus Session', timerSettings.focusSession * 60).then(
+          () => {
+            // Refresh the page to show updated session list
+            router.refresh();
+          }
+        );
       });
     } else if (!timer.isRunning && !timer.isFinished) {
       // Reset hasSaved when timer is reset (not running and not finished)
       hasSavedRef.current = false;
     }
-  }, [timer.isFinished, timer.isRunning, saveAction, router]);
+  }, [
+    timer.isFinished,
+    timer.isRunning,
+    saveAction,
+    router,
+    timerSettings.focusSession,
+  ]);
 
   return (
     <Card>
       <CardHeader className="text-center">
         <CardTitle>Focus Session</CardTitle>
-        <CardDescription>Stay focused for 25 minutes</CardDescription>
+        <CardDescription>
+          Stay focused for {timerSettings.focusSession} minutes
+        </CardDescription>
+        <div className="mt-4 flex justify-center">
+          <TimerSettingsDialog
+            settings={timerSettings}
+            onSettingsChange={handleSettingsChange}
+          />
+        </div>
       </CardHeader>
 
       <CardContent className="flex flex-col items-center justify-between gap-8 min-h-[400px]">
