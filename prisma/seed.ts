@@ -15,7 +15,6 @@ async function main() {
   const sessions = Array.from({ length: 10 }).map((_, i) => ({
     title: `Pomodoro Session ${i + 1}`,
     duration: 25 * 60,
-    completed: Math.random() > 0.2,
     userId: user.id,
     createdAt: new Date(Date.now() - i * 1000 * 60 * 60), // spaced by 1 hour
     updatedAt: new Date(),

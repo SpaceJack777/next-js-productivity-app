@@ -104,44 +104,68 @@ export function usePomodoro(durationMinutes = 25) {
         0
       );
 
-      dispatch({
-        type: 'INITIALIZE',
-        payload: {
-          remainingMs: remaining,
-          isRunning: remaining > 0,
-          isFinished: remaining === 0,
-        },
-      });
-
-      // Update refs
-      startedAtRef.current = savedState.startedAt;
-      pausedAtRef.current = savedState.pausedAt;
-
-      // If timer finished while away, save finished state
       if (remaining === 0) {
-        saveState({
-          remainingMs: 0,
-          isRunning: false,
-          isFinished: true,
-          startedAt: null,
-          pausedAt: null,
-          durationMs,
+        // Timer finished while away - reset to initial state instead of keeping finished
+        dispatch({
+          type: 'INITIALIZE',
+          payload: {
+            remainingMs: durationMs,
+            isRunning: false,
+            isFinished: false,
+          },
         });
+
+        // Clear saved state since we've reset
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } else {
+        // Timer still running
+        dispatch({
+          type: 'INITIALIZE',
+          payload: {
+            remainingMs: remaining,
+            isRunning: true,
+            isFinished: false,
+          },
+        });
+
+        // Update refs
+        startedAtRef.current = savedState.startedAt;
+        pausedAtRef.current = savedState.pausedAt;
       }
     } else {
-      // Timer was paused or finished
-      dispatch({
-        type: 'INITIALIZE',
-        payload: {
-          remainingMs: savedState.remainingMs,
-          isRunning: savedState.isRunning,
-          isFinished: savedState.isFinished,
-        },
-      });
+      // Timer was paused
+      if (savedState.isFinished) {
+        // If it was finished, reset to initial state
+        dispatch({
+          type: 'INITIALIZE',
+          payload: {
+            remainingMs: durationMs,
+            isRunning: false,
+            isFinished: false,
+          },
+        });
 
-      // Update refs
-      startedAtRef.current = savedState.startedAt;
-      pausedAtRef.current = savedState.pausedAt;
+        // Clear saved state
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } else {
+        // Regular paused state
+        dispatch({
+          type: 'INITIALIZE',
+          payload: {
+            remainingMs: savedState.remainingMs,
+            isRunning: savedState.isRunning,
+            isFinished: false, // Never load as finished
+          },
+        });
+
+        // Update refs
+        startedAtRef.current = savedState.startedAt;
+        pausedAtRef.current = savedState.pausedAt;
+      }
     }
   }, [durationMs]);
 

@@ -18,7 +18,6 @@ type Pomodoro = {
   id: string;
   title: string;
   duration: number;
-  completed: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -38,18 +37,17 @@ export function FocusTimerInfo({ sessions }: { sessions: Pomodoro[] }) {
   }, [sessions, page]);
 
   return (
-    <Card className="w-full">
+    <Card className="w-full flex flex-col h-full">
       <CardHeader>
         <CardTitle>Recent Pomodoro Sessions</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grow">
+      <CardContent className="flex flex-col flex-1 justify-between min-h-0">
+        <div className="flex-1 min-h-0 overflow-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Title</TableHead>
                 <TableHead>Duration (min)</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead>Time</TableHead>
               </TableRow>
             </TableHeader>
@@ -59,21 +57,6 @@ export function FocusTimerInfo({ sessions }: { sessions: Pomodoro[] }) {
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.title}</TableCell>
                     <TableCell>{Math.round(s.duration / 60)} min</TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          s.completed
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                        }`}
-                        role="status"
-                        aria-label={
-                          s.completed ? 'Completed session' : 'Failed session'
-                        }
-                      >
-                        {s.completed ? 'Completed' : 'Failed'}
-                      </span>
-                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(s.createdAt).toISOString().split('T')[0]}{' '}
                       {new Date(s.createdAt).toLocaleTimeString([], {
@@ -86,7 +69,7 @@ export function FocusTimerInfo({ sessions }: { sessions: Pomodoro[] }) {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={3}
                     className="h-24 text-center text-muted-foreground"
                   >
                     No sessions found.
@@ -97,7 +80,7 @@ export function FocusTimerInfo({ sessions }: { sessions: Pomodoro[] }) {
           </Table>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 shrink-0 ">
           <AppPagination
             totalPages={totalPages}
             currentPage={page}

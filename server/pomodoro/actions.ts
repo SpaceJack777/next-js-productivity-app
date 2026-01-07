@@ -4,7 +4,7 @@ import { getSession } from '@/lib/get-session';
 import { prisma } from '@/prisma/prisma';
 
 /**
- * Save a completed Pomodoro session
+ * Save a Pomodoro session
  * @param title - Title of the session
  * @param durationSeconds - Duration in seconds
  */
@@ -17,7 +17,6 @@ export async function savePomodoro(title: string, durationSeconds: number) {
       userId: session.user.id,
       title, // required field in your schema
       duration: durationSeconds,
-      completed: true,
     },
   });
 }

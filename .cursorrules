@@ -253,7 +253,6 @@ model Pomodoro {
   id        String   @id @default(cuid())
   title     String
   duration  Int
-  completed Boolean  @default(false)
   userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -318,7 +317,6 @@ export async function GET(request: Request) {
       id: true,
       title: true,
       duration: true,
-      completed: true,
       createdAt: true,
     }
   });
@@ -464,7 +462,6 @@ import { z } from 'zod';
 export const pomodoroSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title too long'),
   duration: z.number().int().positive('Duration must be positive'),
-  completed: z.boolean().default(false),
 });
 
 export type PomodoroInput = z.infer<typeof pomodoroSchema>;
@@ -603,11 +600,7 @@ export async function getDashboardData(userId: string) {
       orderBy: { createdAt: 'desc' },
       take: 5,
     }),
-    prisma.pomodoro.groupBy({
-      by: ['completed'],
-      where: { userId },
-      _count: true,
-    }),
+    // Since all pomodoros are completed by design, no need for completion stats
   ]);
 
   return { user, recentPomodoros, stats };

@@ -11,7 +11,9 @@ import {
 import { CircularProgress } from '@/components/ui/circular-progress';
 import { usePomodoro } from '@/lib/pomodoro/use-pomodoro';
 
-import { useEffect, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+
+import { useEffect, useRef, useTransition } from 'react';
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -24,20 +26,29 @@ type Props = {
 };
 
 export function FocusTimerCard({ saveAction }: Props) {
-  const timer = usePomodoro(25);
+  const timer = usePomodoro(1);
   const [isPending, startTransition] = useTransition();
+  const hasSavedRef = useRef(false);
+  const router = useRouter();
 
-  const totalSeconds = 25 * 60;
+  const totalSeconds = 1 * 60;
   const elapsedSeconds = totalSeconds - timer.remainingSeconds;
   const progress = Math.min(elapsedSeconds / totalSeconds, 1);
 
   useEffect(() => {
-    if (timer.isFinished) {
+    if (timer.isFinished && !hasSavedRef.current) {
+      hasSavedRef.current = true;
       startTransition(() => {
-        saveAction('Focus Session', 25 * 60);
+        saveAction('Focus Session', 1 * 60).then(() => {
+          // Refresh the page to show updated session list
+          router.refresh();
+        });
       });
+    } else if (!timer.isRunning && !timer.isFinished) {
+      // Reset hasSaved when timer is reset (not running and not finished)
+      hasSavedRef.current = false;
     }
-  }, [timer.isFinished, saveAction]);
+  }, [timer.isFinished, timer.isRunning, saveAction, router]);
 
   return (
     <Card>

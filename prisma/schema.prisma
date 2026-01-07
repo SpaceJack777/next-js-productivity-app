@@ -60,7 +60,6 @@ model Pomodoro {
   id        String   @id @default(cuid())
   title     String
   duration  Int
-  completed Boolean  @default(false)
   userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
