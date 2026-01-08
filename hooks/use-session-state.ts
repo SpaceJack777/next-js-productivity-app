@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
+import { clearStorage, getFromStorage } from "@/lib/storage";
 
 interface Timer {
   reset: () => void;
@@ -10,11 +11,15 @@ interface Timer {
   isRunning: boolean;
 }
 
+export type SessionType = "focus" | "break";
+
 interface SessionState {
   sessionDuration: number;
   sessionStarted: boolean;
+  sessionType: SessionType;
   setSessionDuration: (duration: number) => void;
   setSessionStarted: (started: boolean) => void;
+  setSessionType: (type: SessionType) => void;
   resetSession: () => void;
 }
 
@@ -23,22 +28,25 @@ const useSessionStore = create<SessionState>()(
     (set) => ({
       sessionDuration: 25,
       sessionStarted: false,
+      sessionType: "focus",
       setSessionDuration: (duration) => set({ sessionDuration: duration }),
       setSessionStarted: (started) => set({ sessionStarted: started }),
-      resetSession: () => set({ sessionStarted: false }),
+      setSessionType: (type) => set({ sessionType: type }),
+      resetSession: () => set({ sessionStarted: false, sessionType: "focus" }),
     }),
     {
       name: "session-storage",
       partialize: (state) => ({
         sessionDuration: state.sessionDuration,
         sessionStarted: state.sessionStarted,
+        sessionType: state.sessionType,
       }),
     },
   ),
 );
 
 interface UseSessionStateProps {
-  timerSettings: { focusSession: number };
+  timerSettings: { focusSession: number; shortBreak: number };
   saveAction: (title: string, durationSeconds: number) => Promise<void>;
 }
 
@@ -49,8 +57,10 @@ export function useSessionState({
   const {
     sessionDuration,
     sessionStarted,
+    sessionType,
     setSessionDuration,
     setSessionStarted,
+    setSessionType,
     resetSession: storeResetSession,
   } = useSessionStore();
 
@@ -58,9 +68,18 @@ export function useSessionState({
   const hasSavedRef = useRef(false);
   const router = useRouter();
 
+  useEffect(() => {
+    const timerState = getFromStorage("pomodoro-timer-state", null);
+    if (!timerState && sessionStarted) {
+      setSessionStarted(false);
+    }
+  }, [sessionStarted, setSessionStarted]);
+
   const currentSessionDuration = sessionStarted
     ? sessionDuration
-    : timerSettings.focusSession;
+    : sessionType === "focus"
+      ? timerSettings.focusSession
+      : timerSettings.shortBreak;
 
   const startSession = useCallback(() => {
     setSessionStarted(true);
@@ -72,84 +91,107 @@ export function useSessionState({
 
   const endSessionEarly = useCallback(
     (timer: Timer, elapsedMinutes: number) => {
-      if (elapsedMinutes >= 5 && !hasSavedRef.current) {
-        hasSavedRef.current = true;
-        startTransition(() => {
-          saveAction("Focus Session (Ended Early)", elapsedMinutes * 60)
-            .then(() => {
-              timer.reset();
-              setSessionDuration(timerSettings.focusSession);
-              setSessionStarted(false);
-              storeResetSession();
-              router.refresh();
-            })
-            .catch((error) => {
-              console.error("Failed to save session:", error);
-              hasSavedRef.current = false;
-            });
-        });
+      if (sessionType === "focus") {
+        if (elapsedMinutes >= 5 && !hasSavedRef.current) {
+          hasSavedRef.current = true;
+          startTransition(() => {
+            saveAction("Focus Session (Ended Early)", elapsedMinutes * 60)
+              .then(() => {
+                timer.reset();
+                clearStorage("pomodoro-timer-state");
+                setSessionDuration(timerSettings.shortBreak);
+                setSessionType("break");
+                setSessionStarted(false);
+                router.refresh();
+              })
+              .catch((error) => {
+                console.error("Failed to save session:", error);
+                hasSavedRef.current = false;
+              });
+          });
+        } else {
+          timer.reset();
+          setSessionDuration(timerSettings.focusSession);
+          setSessionStarted(false);
+          storeResetSession();
+        }
       } else {
         timer.reset();
+        clearStorage("pomodoro-timer-state");
         setSessionDuration(timerSettings.focusSession);
+        setSessionType("focus");
         setSessionStarted(false);
-        storeResetSession();
       }
     },
     [
+      sessionType,
       timerSettings.focusSession,
+      timerSettings.shortBreak,
       saveAction,
       startTransition,
       router,
       setSessionDuration,
+      setSessionType,
       setSessionStarted,
       storeResetSession,
     ],
   );
 
   const handleTimerComplete = useCallback(
-    (sessionDuration: number) => {
+    (sessionDuration: number, currentSessionType: SessionType) => {
       if (!hasSavedRef.current) {
         hasSavedRef.current = true;
-        startTransition(() => {
-          saveAction("Focus Session", sessionDuration * 60)
-            .then(() => {
-              setSessionDuration(timerSettings.focusSession);
-              setSessionStarted(false);
-              storeResetSession();
-              router.refresh();
-            })
-            .catch((error) => {
-              console.error("Failed to save session:", error);
-              hasSavedRef.current = false;
-            });
-        });
+
+        if (currentSessionType === "focus") {
+          startTransition(() => {
+            saveAction("Focus Session", sessionDuration * 60)
+              .then(() => {
+                clearStorage("pomodoro-timer-state");
+                setSessionDuration(timerSettings.shortBreak);
+                setSessionType("break");
+                setSessionStarted(false);
+                router.refresh();
+              })
+              .catch((error) => {
+                console.error("Failed to save session:", error);
+                hasSavedRef.current = false;
+              });
+          });
+        } else {
+          clearStorage("pomodoro-timer-state");
+          setSessionDuration(timerSettings.focusSession);
+          setSessionType("focus");
+          setSessionStarted(false);
+        }
       }
     },
     [
       timerSettings.focusSession,
+      timerSettings.shortBreak,
       saveAction,
       startTransition,
       router,
       setSessionDuration,
+      setSessionType,
       setSessionStarted,
-      storeResetSession,
     ],
   );
 
   const handleTimerUpdate = useCallback(
     (timer: Timer, currentSessionDuration: number) => {
       if (timer.isFinished) {
-        handleTimerComplete(currentSessionDuration);
+        handleTimerComplete(currentSessionDuration, sessionType);
       } else if (!timer.isRunning && !timer.isFinished) {
         hasSavedRef.current = false;
       }
     },
-    [handleTimerComplete],
+    [handleTimerComplete, sessionType],
   );
 
   return {
     currentSessionDuration,
     sessionStarted,
+    sessionType,
     setSessionStarted,
     setSessionDuration,
     isPending,

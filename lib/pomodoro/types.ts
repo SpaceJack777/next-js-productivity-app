@@ -1,5 +1,7 @@
 import { TimerSettings } from "@/lib/validation/pomodoro";
 
+export type SessionType = "focus" | "break";
+
 // Hook-related types
 export interface TimerState {
   remainingMs: number;

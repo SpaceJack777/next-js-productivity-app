@@ -7,6 +7,7 @@ export type {
   TimerState,
   InternalTimerState,
   TimerAction,
+  SessionType,
   // Component types
   Timer,
   Pomodoro,

@@ -62,9 +62,9 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
   const {
     currentSessionDuration,
     sessionStarted,
+    sessionType,
     isPending,
     startSession,
-    resetSession,
     endSessionEarly,
     handleTimerUpdate,
   } = useSessionState({ timerSettings, saveAction: memoizedSaveAction });
@@ -91,7 +91,7 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
 
   return (
     <TimerWrapper
-      key={`timer-${currentSessionDuration}-${sessionStarted}`}
+      key={`timer-${currentSessionDuration}-${sessionStarted}-${sessionType}`}
       duration={currentSessionDuration}
       onTimerUpdate={handleTimerUpdateStable}
       render={(timer) => {
@@ -115,7 +115,9 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
                 />
               </div>
               <CardHeader className="text-center">
-                <CardTitle>Focus Session</CardTitle>
+                <CardTitle suppressHydrationWarning>
+                  {sessionType === "focus" ? "Focus Session" : "Break Time"}
+                </CardTitle>
                 <CardDescription
                   suppressHydrationWarning
                   className="text-center"
@@ -150,7 +152,9 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
                   className="flex gap-3 w-full justify-center"
                   suppressHydrationWarning
                 >
-                  {timer.isRunning ? (
+                  {isLoading ? (
+                    <Skeleton className="h-10 min-w-[140px]" />
+                  ) : timer.isRunning ? (
                     <Button
                       onClick={timer.pause}
                       size="lg"
@@ -162,13 +166,16 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
                   ) : timer.isFinished ? (
                     <Button
                       onClick={() => {
-                        timer.reset();
-                        resetSession();
+                        timer.start();
+                        startSession();
                       }}
                       size="lg"
                       className="min-w-[140px]"
+                      suppressHydrationWarning
                     >
-                      Start New Session
+                      {sessionType === "focus"
+                        ? "Start Break"
+                        : "Start Focus Session"}
                     </Button>
                   ) : (
                     <div className="flex gap-3">
@@ -181,19 +188,26 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
                         className="min-w-[140px]"
                       >
                         <span suppressHydrationWarning>
-                          {sessionStarted ? "Resume" : "Start Focus"}
+                          {sessionStarted
+                            ? "Resume"
+                            : sessionType === "focus"
+                              ? "Start Focus"
+                              : "Start Break"}
                         </span>
                       </Button>
-                      {hasHydrated && sessionStarted && (
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowEndDialog(true)}
-                          size="lg"
-                          disabled={isPending}
-                        >
-                          End Session
-                        </Button>
-                      )}
+                      {hasHydrated &&
+                        sessionStarted &&
+                        timer.remainingSeconds <
+                          currentSessionDuration * 60 && (
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowEndDialog(true)}
+                            size="lg"
+                            disabled={isPending}
+                          >
+                            End Session
+                          </Button>
+                        )}
                     </div>
                   )}
                 </div>
@@ -205,6 +219,7 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
               onOpenChange={setShowEndDialog}
               onConfirm={handleEndSessionConfirm}
               elapsedMinutes={elapsedMinutes}
+              sessionType={sessionType}
             />
           </>
         );
