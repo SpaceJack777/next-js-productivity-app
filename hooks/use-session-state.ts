@@ -1,23 +1,41 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-
-function debounce<TArgs extends unknown[], TReturn>(
-  func: (...args: TArgs) => TReturn,
-  delay: number,
-): (...args: TArgs) => void {
-  let timeoutId: NodeJS.Timeout;
-  return (...args: TArgs) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-}
 
 interface Timer {
   reset: () => void;
   isFinished: boolean;
   isRunning: boolean;
 }
+
+interface SessionState {
+  sessionDuration: number;
+  sessionStarted: boolean;
+  setSessionDuration: (duration: number) => void;
+  setSessionStarted: (started: boolean) => void;
+  resetSession: () => void;
+}
+
+const useSessionStore = create<SessionState>()(
+  persist(
+    (set) => ({
+      sessionDuration: 25,
+      sessionStarted: false,
+      setSessionDuration: (duration) => set({ sessionDuration: duration }),
+      setSessionStarted: (started) => set({ sessionStarted: started }),
+      resetSession: () => set({ sessionStarted: false }),
+    }),
+    {
+      name: "session-storage",
+      partialize: (state) => ({
+        sessionDuration: state.sessionDuration,
+        sessionStarted: state.sessionStarted,
+      }),
+    },
+  ),
+);
 
 interface UseSessionStateProps {
   timerSettings: { focusSession: number };
@@ -28,109 +46,53 @@ export function useSessionState({
   timerSettings,
   saveAction,
 }: UseSessionStateProps) {
-  const getStoredSessionDuration = (): number => {
-    if (typeof window === "undefined") return timerSettings.focusSession;
-    const saved = localStorage.getItem("currentSessionDuration");
-    return saved ? parseInt(saved) : timerSettings.focusSession;
-  };
-
-  const getStoredSessionStarted = (): boolean => {
-    if (typeof window === "undefined") return false;
-    const saved = localStorage.getItem("sessionStarted");
-    return saved === "true";
-  };
-
-  const setStoredSessionDuration = (duration: number): void => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("currentSessionDuration", duration.toString());
-    }
-  };
-
-  const setStoredSessionStarted = (started: boolean): void => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("sessionStarted", started.toString());
-    }
-  };
-
-  const clearStoredSession = (): void => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("sessionStarted");
-      localStorage.removeItem("currentSessionDuration");
-    }
-  };
-
-  const [storedSessionDuration, setStoredSessionDurationState] =
-    useState<number>(getStoredSessionDuration);
-  const [sessionStarted, setSessionStarted] = useState<boolean>(
-    getStoredSessionStarted,
-  );
+  const {
+    sessionDuration,
+    sessionStarted,
+    setSessionDuration,
+    setSessionStarted,
+    resetSession: storeResetSession,
+  } = useSessionStore();
 
   const [isPending, startTransition] = useTransition();
-
-  const currentSessionDuration = useMemo(() => {
-    return sessionStarted ? storedSessionDuration : timerSettings.focusSession;
-  }, [sessionStarted, storedSessionDuration, timerSettings.focusSession]);
-
   const hasSavedRef = useRef(false);
   const router = useRouter();
 
-  const debouncedSetStoredSession = useMemo(
-    () =>
-      debounce((started: boolean, duration: number) => {
-        setStoredSessionStarted(started);
-        setStoredSessionDuration(duration);
-      }, 150),
-    [],
-  );
-
-  useEffect(() => {
-    debouncedSetStoredSession(sessionStarted, storedSessionDuration);
-  }, [sessionStarted, storedSessionDuration, debouncedSetStoredSession]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && !sessionStarted) {
-      localStorage.setItem(
-        "currentSessionDuration",
-        timerSettings.focusSession.toString(),
-      );
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStoredSessionDurationState(timerSettings.focusSession);
-    }
-  }, [
-    timerSettings.focusSession,
-    sessionStarted,
-    setStoredSessionDurationState,
-  ]);
+  const currentSessionDuration = sessionStarted
+    ? sessionDuration
+    : timerSettings.focusSession;
 
   const startSession = useCallback(() => {
     setSessionStarted(true);
-  }, []);
+  }, [setSessionStarted]);
 
   const resetSession = useCallback(() => {
-    setSessionStarted(false);
-    clearStoredSession();
-  }, []);
+    storeResetSession();
+  }, [storeResetSession]);
 
   const endSessionEarly = useCallback(
     (timer: Timer, elapsedMinutes: number) => {
       if (elapsedMinutes >= 5 && !hasSavedRef.current) {
         hasSavedRef.current = true;
         startTransition(() => {
-          saveAction("Focus Session (Ended Early)", elapsedMinutes * 60).then(
-            () => {
+          saveAction("Focus Session (Ended Early)", elapsedMinutes * 60)
+            .then(() => {
               timer.reset();
-              setStoredSessionDurationState(timerSettings.focusSession);
+              setSessionDuration(timerSettings.focusSession);
               setSessionStarted(false);
-              clearStoredSession();
+              storeResetSession();
               router.refresh();
-            },
-          );
+            })
+            .catch((error) => {
+              console.error("Failed to save session:", error);
+              hasSavedRef.current = false;
+            });
         });
       } else {
         timer.reset();
-        setStoredSessionDurationState(timerSettings.focusSession);
+        setSessionDuration(timerSettings.focusSession);
         setSessionStarted(false);
-        clearStoredSession();
+        storeResetSession();
       }
     },
     [
@@ -138,8 +100,9 @@ export function useSessionState({
       saveAction,
       startTransition,
       router,
-      setStoredSessionDurationState,
+      setSessionDuration,
       setSessionStarted,
+      storeResetSession,
     ],
   );
 
@@ -148,12 +111,17 @@ export function useSessionState({
       if (!hasSavedRef.current) {
         hasSavedRef.current = true;
         startTransition(() => {
-          saveAction("Focus Session", sessionDuration * 60).then(() => {
-            setStoredSessionDurationState(timerSettings.focusSession);
-            setSessionStarted(false);
-            clearStoredSession();
-            router.refresh();
-          });
+          saveAction("Focus Session", sessionDuration * 60)
+            .then(() => {
+              setSessionDuration(timerSettings.focusSession);
+              setSessionStarted(false);
+              storeResetSession();
+              router.refresh();
+            })
+            .catch((error) => {
+              console.error("Failed to save session:", error);
+              hasSavedRef.current = false;
+            });
         });
       }
     },
@@ -162,8 +130,9 @@ export function useSessionState({
       saveAction,
       startTransition,
       router,
-      setStoredSessionDurationState,
+      setSessionDuration,
       setSessionStarted,
+      storeResetSession,
     ],
   );
 
@@ -182,6 +151,7 @@ export function useSessionState({
     currentSessionDuration,
     sessionStarted,
     setSessionStarted,
+    setSessionDuration,
     isPending,
     startSession,
     resetSession,

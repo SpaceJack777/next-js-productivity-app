@@ -1,48 +1,28 @@
-'use client';
-import { useEffect, useLayoutEffect, useReducer, useRef } from 'react';
+"use client";
+import { useEffect, useLayoutEffect, useReducer, useRef } from "react";
+import { getFromStorage, saveToStorage, clearStorage } from "@/lib/storage";
+import { TimerState, InternalTimerState, TimerAction } from "./types";
 
-const STORAGE_KEY = 'pomodoro-timer-state';
-
-interface TimerState {
-  remainingMs: number;
-  isRunning: boolean;
-  isFinished: boolean;
-  startedAt: number | null;
-  pausedAt: number | null;
-  durationMs: number;
-}
-
-interface InternalTimerState {
-  remainingMs: number;
-  isRunning: boolean;
-  isFinished: boolean;
-}
-
-type TimerAction =
-  | { type: 'INITIALIZE'; payload: InternalTimerState }
-  | { type: 'START' }
-  | { type: 'PAUSE' }
-  | { type: 'RESET'; payload: { durationMs: number } }
-  | { type: 'TICK'; payload: { remainingMs: number; isFinished: boolean } };
+const STORAGE_KEY = "pomodoro-timer-state";
 
 const timerReducer = (
   state: InternalTimerState,
-  action: TimerAction
+  action: TimerAction,
 ): InternalTimerState => {
   switch (action.type) {
-    case 'INITIALIZE':
+    case "INITIALIZE":
       return action.payload;
-    case 'START':
+    case "START":
       return { ...state, isRunning: true, isFinished: false };
-    case 'PAUSE':
+    case "PAUSE":
       return { ...state, isRunning: false };
-    case 'RESET':
+    case "RESET":
       return {
         remainingMs: action.payload.durationMs,
         isRunning: false,
         isFinished: false,
       };
-    case 'TICK':
+    case "TICK":
       return {
         ...state,
         remainingMs: action.payload.remainingMs,
@@ -54,6 +34,37 @@ const timerReducer = (
   }
 };
 
+// Calculate remaining time when resuming from saved state
+const calculateRemainingTime = (savedState: TimerState, durationMs: number) => {
+  if (savedState.isRunning && savedState.startedAt) {
+    const elapsed = Date.now() - savedState.startedAt;
+    const remaining = Math.max(
+      (savedState.pausedAt ?? savedState.durationMs) - elapsed,
+      0,
+    );
+
+    if (remaining === 0) {
+      // Timer finished while away
+      clearStorage(STORAGE_KEY);
+      return { remainingMs: durationMs, isRunning: false, isFinished: false };
+    }
+
+    return { remainingMs: remaining, isRunning: true, isFinished: false };
+  }
+
+  // Paused state
+  if (savedState.isFinished) {
+    clearStorage(STORAGE_KEY);
+    return { remainingMs: durationMs, isRunning: false, isFinished: false };
+  }
+
+  return {
+    remainingMs: savedState.remainingMs,
+    isRunning: savedState.isRunning,
+    isFinished: false,
+  };
+};
+
 export function usePomodoro(durationMinutes = 25) {
   const durationMs = durationMinutes * 60 * 1000;
 
@@ -61,112 +72,23 @@ export function usePomodoro(durationMinutes = 25) {
   const pausedAtRef = useRef<number | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load raw state from localStorage (without Date.now calculations)
-  const loadRawState = (): TimerState | null => {
-    if (typeof window === 'undefined') return null;
-
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? (JSON.parse(saved) as TimerState) : null;
-    } catch (error) {
-      console.warn('Failed to load pomodoro state:', error);
-      return null;
-    }
-  };
-
-  const saveState = (state: TimerState) => {
-    if (typeof window === 'undefined') return;
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch (error) {
-      console.warn('Failed to save pomodoro state:', error);
-    }
-  };
-
-  // Start with default state, calculate elapsed time in useLayoutEffect
   const [timerState, dispatch] = useReducer(timerReducer, {
     remainingMs: durationMs,
     isRunning: false,
     isFinished: false,
   });
 
-  // Load and calculate state synchronously before paint to avoid Date.now() during render
+  // Load saved state on mount
   useLayoutEffect(() => {
-    const savedState = loadRawState();
+    const savedState = getFromStorage<TimerState | null>(STORAGE_KEY, null);
     if (!savedState) return;
 
-    // If timer was running, calculate elapsed time since last save
-    if (savedState.isRunning && savedState.startedAt) {
-      const elapsed = Date.now() - savedState.startedAt;
-      const remaining = Math.max(
-        (savedState.pausedAt ?? savedState.durationMs) - elapsed,
-        0
-      );
+    const calculatedState = calculateRemainingTime(savedState, durationMs);
+    dispatch({ type: "INITIALIZE", payload: calculatedState });
 
-      if (remaining === 0) {
-        // Timer finished while away - reset to initial state instead of keeping finished
-        dispatch({
-          type: 'INITIALIZE',
-          payload: {
-            remainingMs: durationMs,
-            isRunning: false,
-            isFinished: false,
-          },
-        });
-
-        // Clear saved state since we've reset
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(STORAGE_KEY);
-        }
-      } else {
-        // Timer still running
-        dispatch({
-          type: 'INITIALIZE',
-          payload: {
-            remainingMs: remaining,
-            isRunning: true,
-            isFinished: false,
-          },
-        });
-
-        // Update refs
-        startedAtRef.current = savedState.startedAt;
-        pausedAtRef.current = savedState.pausedAt;
-      }
-    } else {
-      // Timer was paused
-      if (savedState.isFinished) {
-        // If it was finished, reset to initial state
-        dispatch({
-          type: 'INITIALIZE',
-          payload: {
-            remainingMs: durationMs,
-            isRunning: false,
-            isFinished: false,
-          },
-        });
-
-        // Clear saved state
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(STORAGE_KEY);
-        }
-      } else {
-        // Regular paused state
-        dispatch({
-          type: 'INITIALIZE',
-          payload: {
-            remainingMs: savedState.remainingMs,
-            isRunning: savedState.isRunning,
-            isFinished: false, // Never load as finished
-          },
-        });
-
-        // Update refs
-        startedAtRef.current = savedState.startedAt;
-        pausedAtRef.current = savedState.pausedAt;
-      }
-    }
+    // Restore refs
+    startedAtRef.current = savedState.startedAt;
+    pausedAtRef.current = savedState.pausedAt;
   }, [durationMs]);
 
   useEffect(() => {
@@ -176,54 +98,43 @@ export function usePomodoro(durationMinutes = 25) {
       const elapsed = Date.now() - startedAtRef.current!;
       const remaining = Math.max(
         (pausedAtRef.current ?? durationMs) - elapsed,
-        0
+        0,
       );
 
       dispatch({
-        type: 'TICK',
+        type: "TICK",
         payload: { remainingMs: remaining, isFinished: remaining === 0 },
       });
 
-      if (remaining === 0) {
-        clearInterval(intervalRef.current!);
-        // Save finished state
-        saveState({
-          remainingMs: 0,
-          isRunning: false,
-          isFinished: true,
-          startedAt: null,
-          pausedAt: null,
-          durationMs,
-        });
-      } else {
-        // Save current running state
-        saveState({
-          remainingMs: remaining,
-          isRunning: true,
-          isFinished: false,
-          startedAt: startedAtRef.current,
-          pausedAt: pausedAtRef.current,
-          durationMs,
-        });
-      }
+      saveToStorage(STORAGE_KEY, {
+        remainingMs: remaining,
+        isRunning: remaining > 0,
+        isFinished: remaining === 0,
+        startedAt: startedAtRef.current,
+        pausedAt: pausedAtRef.current,
+        durationMs,
+      });
     }, 1000);
 
-    return () => clearInterval(intervalRef.current!);
-  }, [timerState.isRunning, durationMs]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timerState.isRunning]);
 
   const start = () => {
-    // If timer was paused, resume from remaining time
     const startTime = Date.now();
     startedAtRef.current = startTime;
 
     if (pausedAtRef.current == null) {
-      pausedAtRef.current = durationMs; // first start
+      pausedAtRef.current = durationMs;
     }
 
-    dispatch({ type: 'START' });
+    dispatch({ type: "START" });
 
-    // Save started state
-    saveState({
+    saveToStorage(STORAGE_KEY, {
       remainingMs: timerState.remainingMs,
       isRunning: true,
       isFinished: false,
@@ -234,16 +145,15 @@ export function usePomodoro(durationMinutes = 25) {
   };
 
   const pause = () => {
-    dispatch({ type: 'PAUSE' });
-    pausedAtRef.current = timerState.remainingMs; // store remaining time
+    pausedAtRef.current = timerState.remainingMs;
+    dispatch({ type: "PAUSE" });
 
-    // Save paused state
-    saveState({
+    saveToStorage(STORAGE_KEY, {
       remainingMs: timerState.remainingMs,
       isRunning: false,
       isFinished: false,
       startedAt: startedAtRef.current,
-      pausedAt: timerState.remainingMs,
+      pausedAt: pausedAtRef.current,
       durationMs,
     });
   };
@@ -251,12 +161,8 @@ export function usePomodoro(durationMinutes = 25) {
   const reset = () => {
     startedAtRef.current = null;
     pausedAtRef.current = null;
-    dispatch({ type: 'RESET', payload: { durationMs } });
-
-    // Clear saved state
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY);
-    }
+    dispatch({ type: "RESET", payload: { durationMs } });
+    clearStorage(STORAGE_KEY);
   };
 
   return {

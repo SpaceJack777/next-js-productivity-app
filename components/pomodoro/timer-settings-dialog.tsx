@@ -11,10 +11,8 @@ import {
 } from "@/components/animate-ui/components/radix/dialog";
 import { Button } from "@/components/ui/button";
 import { SettingsForm } from "@/components/settings-input";
-import {
-  type TimerSettings,
-  timerSettingsSchema,
-} from "@/lib/validation/pomodoro";
+import { timerSettingsSchema } from "@/lib/validation/pomodoro";
+import { TimerSettingsDialogProps, TimerSettings } from "@/lib/pomodoro";
 
 import { useState, useRef, useEffect } from "react";
 
@@ -25,11 +23,6 @@ export const defaultTimerSettings: TimerSettings = {
   shortBreak: 5,
   longBreak: 15,
 };
-
-interface TimerSettingsDialogProps {
-  settings: TimerSettings;
-  onSettingsChange: (settings: TimerSettings) => void;
-}
 
 export function TimerSettingsDialog({
   settings,

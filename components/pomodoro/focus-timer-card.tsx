@@ -1,7 +1,5 @@
 "use client";
 
-import { EndSessionDialog } from "@/components/pomodoro/end-session-dialog";
-import { TimerSettingsDialog } from "@/components/pomodoro/timer-settings-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,27 +16,12 @@ import { invalidateSessionsCache } from "@/components/pomodoro/pomodoro-sessions
 import { type TimerSettings } from "@/lib/validation/pomodoro";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EndSessionDialog } from "@/components/pomodoro/end-session-dialog";
+import { TimerSettingsDialog } from "@/components/pomodoro/timer-settings-dialog";
+import { formatTime } from "@/lib/utils";
+import { Timer, FocusTimerCardProps } from "@/lib/pomodoro";
 
-import React, { useEffect, useState, useMemo, useCallback } from "react";
-
-interface Timer {
-  remainingSeconds: number;
-  isRunning: boolean;
-  isFinished: boolean;
-  start: () => void;
-  pause: () => void;
-  reset: () => void;
-}
-
-function formatTime(seconds: number) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-type Props = {
-  saveAction: (title: string, durationSeconds: number) => Promise<void>;
-};
+import React, { useEffect, useState, useCallback } from "react";
 
 function TimerWrapper({
   duration,
@@ -60,7 +43,7 @@ function TimerWrapper({
   return <>{render(timer)}</>;
 }
 
-export function FocusTimerCard({ saveAction }: Props) {
+export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
   const {
     settings: timerSettings,
     isLoading,
@@ -92,21 +75,6 @@ export function FocusTimerCard({ saveAction }: Props) {
   React.useEffect(() => {
     setHasHydrated(true);
   }, []);
-
-  const nextSessionIndicator = useMemo(
-    () =>
-      hasHydrated &&
-      currentSessionDuration !== timerSettings.focusSession &&
-      sessionStarted ? (
-        <> • Next session: {timerSettings.focusSession} min</>
-      ) : null,
-    [
-      hasHydrated,
-      currentSessionDuration,
-      timerSettings.focusSession,
-      sessionStarted,
-    ],
-  );
 
   const handleSettingsChange = async (newSettings: TimerSettings) => {
     try {
@@ -155,10 +123,7 @@ export function FocusTimerCard({ saveAction }: Props) {
                   {isLoading ? (
                     <Skeleton className="h-4 w-50 mt-1 mx-auto" />
                   ) : (
-                    <>
-                      Current session: {currentSessionDuration} min
-                      {nextSessionIndicator}
-                    </>
+                    <>Current session: {currentSessionDuration} min</>
                   )}
                 </CardDescription>
               </CardHeader>
@@ -179,18 +144,6 @@ export function FocusTimerCard({ saveAction }: Props) {
                       </div>
                     </div>
                   </CircularProgress>
-
-                  {timer.isFinished && (
-                    <div className="text-center space-y-1">
-                      <div className="text-4xl">🎉</div>
-                      <div className="text-lg font-semibold text-green-600 dark:text-green-400">
-                        Session Complete!
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Great work!
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <div

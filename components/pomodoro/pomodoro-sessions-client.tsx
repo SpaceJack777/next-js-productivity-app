@@ -3,14 +3,7 @@
 import { useEffect, useState } from "react";
 import { FocusTimerInfo } from "./focus-timer-info";
 import { getPomodoroSessions } from "@/server/pomodoro/queries";
-
-type Pomodoro = {
-  id: string;
-  title: string;
-  duration: number;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import { Pomodoro } from "@/lib/pomodoro";
 
 let sessionsCache: Pomodoro[] = [];
 let sessionsTimestamp = 0;

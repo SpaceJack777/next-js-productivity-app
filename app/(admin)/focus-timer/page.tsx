@@ -1,5 +1,4 @@
-import { FocusTimerCard } from "@/components/pomodoro/focus-timer-card";
-import { PomodoroSessionsClient } from "@/components/pomodoro/pomodoro-sessions-client";
+import { FocusTimerCard, PomodoroSessionsClient } from "@/components/pomodoro";
 import { getSession } from "@/lib/get-session";
 import { savePomodoro } from "@/server/pomodoro/actions";
 
