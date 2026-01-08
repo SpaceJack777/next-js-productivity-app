@@ -91,7 +91,11 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
 
   return (
     <TimerWrapper
-      key={`timer-${currentSessionDuration}-${sessionStarted}-${sessionType}`}
+      key={
+        sessionStarted
+          ? undefined
+          : `timer-${currentSessionDuration}-${sessionType}`
+      }
       duration={currentSessionDuration}
       onTimerUpdate={handleTimerUpdateStable}
       render={(timer) => {
@@ -125,7 +129,7 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
                   {isLoading ? (
                     <Skeleton className="h-4 w-50 mt-1 mx-auto" />
                   ) : (
-                    <>Current session: {currentSessionDuration} min</>
+                    <>{currentSessionDuration} min</>
                   )}
                 </CardDescription>
               </CardHeader>
@@ -195,19 +199,16 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
                               : "Start Break"}
                         </span>
                       </Button>
-                      {hasHydrated &&
-                        sessionStarted &&
-                        timer.remainingSeconds <
-                          currentSessionDuration * 60 && (
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowEndDialog(true)}
-                            size="lg"
-                            disabled={isPending}
-                          >
-                            End Session
-                          </Button>
-                        )}
+                      {hasHydrated && sessionStarted && (
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowEndDialog(true)}
+                          size="lg"
+                          disabled={isPending}
+                        >
+                          End Session
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>

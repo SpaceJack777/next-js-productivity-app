@@ -31,12 +31,7 @@ export function useUserSettings() {
     if (!settingsCache || Date.now() - cacheTimestamp >= CACHE_DURATION) {
       const loadSettings = async () => {
         try {
-          let userSettings = await getUserSettings();
-          userSettings = {
-            ...userSettings,
-            focusSession: 0.1,
-            shortBreak: 0.2,
-          };
+          const userSettings = await getUserSettings();
           settingsCache = userSettings;
           cacheTimestamp = Date.now();
           setSettings(userSettings);
@@ -45,11 +40,7 @@ export function useUserSettings() {
           if (settingsCache) {
             setSettings(settingsCache);
           } else {
-            setSettings({
-              ...defaultTimerSettings,
-              focusSession: 0.1,
-              shortBreak: 0.2,
-            });
+            setSettings(defaultTimerSettings);
           }
         } finally {
           setIsLoading(false);

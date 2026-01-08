@@ -75,6 +75,26 @@ export function useSessionState({
     }
   }, [sessionStarted, setSessionStarted]);
 
+  useEffect(() => {
+    if (!sessionStarted) {
+      const expectedDuration =
+        sessionType === "focus"
+          ? timerSettings.focusSession
+          : timerSettings.shortBreak;
+      if (sessionDuration !== expectedDuration) {
+        clearStorage("pomodoro-timer-state");
+        setSessionDuration(expectedDuration);
+      }
+    }
+  }, [
+    sessionStarted,
+    sessionType,
+    sessionDuration,
+    timerSettings.focusSession,
+    timerSettings.shortBreak,
+    setSessionDuration,
+  ]);
+
   const currentSessionDuration = sessionStarted
     ? sessionDuration
     : sessionType === "focus"

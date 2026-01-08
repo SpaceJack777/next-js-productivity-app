@@ -7,28 +7,41 @@ import { Pomodoro } from "@/lib/pomodoro";
 
 let sessionsCache: Pomodoro[] = [];
 let sessionsTimestamp = 0;
+let invalidationCounter = 0;
 const SESSIONS_CACHE_DURATION = 30 * 1000;
 
 export function invalidateSessionsCache() {
   sessionsCache = [];
   sessionsTimestamp = 0;
+  invalidationCounter++;
 }
 
 export function PomodoroSessionsClient() {
-  const [sessions, setSessions] = useState<Pomodoro[]>(sessionsCache);
-  const [loading, setLoading] = useState(true);
+  const cacheValid =
+    sessionsCache.length > 0 &&
+    Date.now() - sessionsTimestamp < SESSIONS_CACHE_DURATION;
+
+  const [sessions, setSessions] = useState<Pomodoro[]>(
+    cacheValid ? sessionsCache : [],
+  );
+  const [loading, setLoading] = useState(!cacheValid);
+  const [lastInvalidation, setLastInvalidation] = useState(invalidationCounter);
 
   useEffect(() => {
-    const loadSessions = async () => {
-      if (
-        sessionsCache.length > 0 &&
-        Date.now() - sessionsTimestamp < SESSIONS_CACHE_DURATION
-      ) {
-        setSessions(sessionsCache);
-        setLoading(false);
-        return;
+    const interval = setInterval(() => {
+      if (invalidationCounter !== lastInvalidation) {
+        setLastInvalidation(invalidationCounter);
       }
+    }, 100);
 
+    return () => clearInterval(interval);
+  }, [lastInvalidation]);
+
+  useEffect(() => {
+    if (cacheValid && invalidationCounter === lastInvalidation) return;
+
+    const loadSessions = async () => {
+      setLoading(true);
       try {
         const freshSessions = await getPomodoroSessions();
         sessionsCache = freshSessions;
@@ -36,16 +49,13 @@ export function PomodoroSessionsClient() {
         setSessions(freshSessions);
       } catch (error) {
         console.warn("Failed to load pomodoro sessions:", error);
-        if (sessionsCache.length > 0) {
-          setSessions(sessionsCache);
-        }
       } finally {
         setLoading(false);
       }
     };
 
     loadSessions();
-  }, []);
+  }, [cacheValid, lastInvalidation]);
 
   return <FocusTimerInfo sessions={sessions} loading={loading} />;
 }
