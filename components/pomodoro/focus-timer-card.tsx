@@ -136,7 +136,12 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
 
               <CardContent className="flex flex-col items-center justify-between gap-8 min-h-[400px]">
                 <div className="flex flex-col items-center gap-8">
-                  <CircularProgress progress={progress}>
+                  <CircularProgress
+                    progress={progress}
+                    circleColor={
+                      sessionType === "focus" ? "" : "text-emerald-900"
+                    }
+                  >
                     <div className="text-center">
                       <div
                         className="text-6xl font-mono font-semibold tabular-nums"
