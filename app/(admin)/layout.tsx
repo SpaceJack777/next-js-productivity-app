@@ -9,7 +9,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import { getSession } from "@/lib/get-session";
 import { SessionProvider } from "@/lib/session-context";
-
 import { redirect } from "next/navigation";
 import { PropsWithChildren } from "react";
 
