@@ -1,13 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { usePomodoro } from "@/lib/pomodoro/use-pomodoro";
 import { useUserSettings } from "@/hooks/use-user-timer-settings";
@@ -63,6 +57,7 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
     currentSessionDuration,
     sessionStarted,
     sessionType,
+    isLongBreak,
     isPending,
     startSession,
     endSessionEarly,
@@ -120,18 +115,12 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
               </div>
               <CardHeader className="text-center">
                 <CardTitle suppressHydrationWarning>
-                  {sessionType === "focus" ? "Focus Session" : "Break Time"}
+                  {sessionType === "focus"
+                    ? "Focus Session"
+                    : isLongBreak
+                      ? "Long Break"
+                      : "Short Break"}
                 </CardTitle>
-                <CardDescription
-                  suppressHydrationWarning
-                  className="text-center"
-                >
-                  {isLoading ? (
-                    <Skeleton className="h-4 w-50 mt-1 mx-auto" />
-                  ) : (
-                    <>{currentSessionDuration} min</>
-                  )}
-                </CardDescription>
               </CardHeader>
 
               <CardContent className="flex flex-col items-center justify-between gap-8 min-h-[400px]">
@@ -139,7 +128,11 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
                   <CircularProgress
                     progress={progress}
                     circleColor={
-                      sessionType === "focus" ? "" : "text-emerald-900"
+                      sessionType === "focus"
+                        ? ""
+                        : isLongBreak
+                          ? "text-blue-600"
+                          : "text-emerald-900"
                     }
                   >
                     <div className="text-center">
@@ -183,7 +176,9 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
                       suppressHydrationWarning
                     >
                       {sessionType === "focus"
-                        ? "Start Break"
+                        ? isLongBreak
+                          ? "Start Long Break"
+                          : "Start Short Break"
                         : "Start Focus Session"}
                     </Button>
                   ) : (

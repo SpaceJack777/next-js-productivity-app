@@ -17,9 +17,11 @@ interface SessionState {
   sessionDuration: number;
   sessionStarted: boolean;
   sessionType: SessionType;
+  completedFocusSessions: number;
   setSessionDuration: (duration: number) => void;
   setSessionStarted: (started: boolean) => void;
   setSessionType: (type: SessionType) => void;
+  incrementCompletedSessions: () => void;
   resetSession: () => void;
 }
 
@@ -29,9 +31,14 @@ const useSessionStore = create<SessionState>()(
       sessionDuration: 25,
       sessionStarted: false,
       sessionType: "focus",
+      completedFocusSessions: 0,
       setSessionDuration: (duration) => set({ sessionDuration: duration }),
       setSessionStarted: (started) => set({ sessionStarted: started }),
       setSessionType: (type) => set({ sessionType: type }),
+      incrementCompletedSessions: () =>
+        set((state) => ({
+          completedFocusSessions: state.completedFocusSessions + 1,
+        })),
       resetSession: () => set({ sessionStarted: false, sessionType: "focus" }),
     }),
     {
@@ -40,13 +47,18 @@ const useSessionStore = create<SessionState>()(
         sessionDuration: state.sessionDuration,
         sessionStarted: state.sessionStarted,
         sessionType: state.sessionType,
+        completedFocusSessions: state.completedFocusSessions,
       }),
     },
   ),
 );
 
 interface UseSessionStateProps {
-  timerSettings: { focusSession: number; shortBreak: number };
+  timerSettings: {
+    focusSession: number;
+    shortBreak: number;
+    longBreak: number;
+  };
   saveAction: (title: string, durationSeconds: number) => Promise<void>;
 }
 
@@ -58,15 +70,20 @@ export function useSessionState({
     sessionDuration,
     sessionStarted,
     sessionType,
+    completedFocusSessions,
     setSessionDuration,
     setSessionStarted,
     setSessionType,
+    incrementCompletedSessions,
     resetSession: storeResetSession,
   } = useSessionStore();
 
   const [isPending, startTransition] = useTransition();
   const hasSavedRef = useRef(false);
   const router = useRouter();
+
+  const isLongBreak =
+    completedFocusSessions > 0 && completedFocusSessions % 4 === 0;
 
   useEffect(() => {
     const timerState = getFromStorage("pomodoro-timer-state", null);
@@ -80,7 +97,9 @@ export function useSessionState({
       const expectedDuration =
         sessionType === "focus"
           ? timerSettings.focusSession
-          : timerSettings.shortBreak;
+          : isLongBreak
+            ? timerSettings.longBreak
+            : timerSettings.shortBreak;
       if (sessionDuration !== expectedDuration) {
         clearStorage("pomodoro-timer-state");
         setSessionDuration(expectedDuration);
@@ -92,6 +111,8 @@ export function useSessionState({
     sessionDuration,
     timerSettings.focusSession,
     timerSettings.shortBreak,
+    timerSettings.longBreak,
+    isLongBreak,
     setSessionDuration,
   ]);
 
@@ -99,7 +120,9 @@ export function useSessionState({
     ? sessionDuration
     : sessionType === "focus"
       ? timerSettings.focusSession
-      : timerSettings.shortBreak;
+      : isLongBreak
+        ? timerSettings.longBreak
+        : timerSettings.shortBreak;
 
   const startSession = useCallback(() => {
     setSessionStarted(true);
@@ -117,9 +140,14 @@ export function useSessionState({
           startTransition(() => {
             saveAction("Focus Session (Ended Early)", elapsedMinutes * 60)
               .then(() => {
+                incrementCompletedSessions();
+                const nextIsLongBreak = (completedFocusSessions + 1) % 4 === 0;
+                const nextBreakDuration = nextIsLongBreak
+                  ? timerSettings.longBreak
+                  : timerSettings.shortBreak;
                 timer.reset();
                 clearStorage("pomodoro-timer-state");
-                setSessionDuration(timerSettings.shortBreak);
+                setSessionDuration(nextBreakDuration);
                 setSessionType("break");
                 setSessionStarted(false);
                 router.refresh();
@@ -145,14 +173,17 @@ export function useSessionState({
     },
     [
       sessionType,
+      completedFocusSessions,
       timerSettings.focusSession,
       timerSettings.shortBreak,
+      timerSettings.longBreak,
       saveAction,
       startTransition,
       router,
       setSessionDuration,
       setSessionType,
       setSessionStarted,
+      incrementCompletedSessions,
       storeResetSession,
     ],
   );
@@ -166,8 +197,13 @@ export function useSessionState({
           startTransition(() => {
             saveAction("Focus Session", sessionDuration * 60)
               .then(() => {
+                incrementCompletedSessions();
+                const nextIsLongBreak = (completedFocusSessions + 1) % 4 === 0;
+                const nextBreakDuration = nextIsLongBreak
+                  ? timerSettings.longBreak
+                  : timerSettings.shortBreak;
                 clearStorage("pomodoro-timer-state");
-                setSessionDuration(timerSettings.shortBreak);
+                setSessionDuration(nextBreakDuration);
                 setSessionType("break");
                 setSessionStarted(false);
                 router.refresh();
@@ -186,14 +222,17 @@ export function useSessionState({
       }
     },
     [
+      completedFocusSessions,
       timerSettings.focusSession,
       timerSettings.shortBreak,
+      timerSettings.longBreak,
       saveAction,
       startTransition,
       router,
       setSessionDuration,
       setSessionType,
       setSessionStarted,
+      incrementCompletedSessions,
     ],
   );
 
@@ -212,6 +251,8 @@ export function useSessionState({
     currentSessionDuration,
     sessionStarted,
     sessionType,
+    isLongBreak,
+    completedFocusSessions,
     setSessionStarted,
     setSessionDuration,
     isPending,

@@ -150,7 +150,8 @@ export function TimerSettingsDialog({
         <DialogHeader>
           <DialogTitle>Timer Settings</DialogTitle>
           <DialogDescription>
-            Configure your focus session and break durations (5-180 minutes).
+            Configure your focus session and break durations. Long break occurs
+            every 4th break.
           </DialogDescription>
         </DialogHeader>
         <SettingsForm settings={settingsForm} />
