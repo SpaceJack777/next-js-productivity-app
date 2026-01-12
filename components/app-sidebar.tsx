@@ -19,6 +19,7 @@ import {
   AudioWaveform,
   Clock,
   Command,
+  Notebook,
   GalleryVerticalEnd,
   LayoutDashboard,
 } from "lucide-react";
@@ -57,6 +58,11 @@ const dataExample = {
       title: "Focus Timer",
       url: "/focus-timer",
       icon: Clock,
+    },
+    {
+      title: "Notes",
+      url: "/notes",
+      icon: Notebook,
     },
     // {
     //   title: 'Documentation',
