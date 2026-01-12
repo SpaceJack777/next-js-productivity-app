@@ -2,25 +2,21 @@ import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from '@/components/animate-ui/components/radix/sidebar';
-import Breadcrumbs from '@/components/app-breadcrumbs';
-import { AppSidebar } from '@/components/app-sidebar';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { Separator } from '@/components/ui/separator';
-import { getSession } from '@/lib/get-session';
-import { SessionProvider } from '@/lib/session-context';
+} from "@/components/animate-ui/components/radix/sidebar";
+import Breadcrumbs from "@/components/app-breadcrumbs";
+import { AppSidebar } from "@/components/app-sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Separator } from "@/components/ui/separator";
+import { getSession } from "@/lib/get-session";
+import { SessionProvider } from "@/lib/session-context";
+import { redirect } from "next/navigation";
+import { PropsWithChildren } from "react";
 
-import { redirect } from 'next/navigation';
-
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: PropsWithChildren) {
   const session = await getSession();
 
   if (!session) {
-    redirect('/auth/signin');
+    redirect("/auth/signin");
   }
 
   return (

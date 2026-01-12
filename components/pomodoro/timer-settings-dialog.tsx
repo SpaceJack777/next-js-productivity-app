@@ -11,10 +11,8 @@ import {
 } from "@/components/animate-ui/components/radix/dialog";
 import { Button } from "@/components/ui/button";
 import { SettingsForm } from "@/components/settings-input";
-import {
-  type TimerSettings,
-  timerSettingsSchema,
-} from "@/lib/validation/pomodoro";
+import { timerSettingsSchema } from "@/lib/validation/pomodoro";
+import { TimerSettingsDialogProps, TimerSettings } from "@/lib/pomodoro";
 
 import { useState, useRef, useEffect } from "react";
 
@@ -25,11 +23,6 @@ export const defaultTimerSettings: TimerSettings = {
   shortBreak: 5,
   longBreak: 15,
 };
-
-interface TimerSettingsDialogProps {
-  settings: TimerSettings;
-  onSettingsChange: (settings: TimerSettings) => void;
-}
 
 export function TimerSettingsDialog({
   settings,
@@ -74,7 +67,7 @@ export function TimerSettingsDialog({
 
     setLocalSettings((prev) => ({
       ...prev,
-      [key]: value === "" ? prev[key] : isNaN(numValue) ? prev[key] : numValue,
+      [key]: value === "" ? "" : isNaN(numValue) ? prev[key] : numValue,
     }));
 
     if (clampTimeoutRef.current) {
@@ -82,29 +75,38 @@ export function TimerSettingsDialog({
     }
 
     clampTimeoutRef.current = setTimeout(() => {
-      if (!isNaN(numValue)) {
-        setLocalSettings((prev) => {
-          const currentValue = prev[key];
-          let clampedValue = currentValue;
+      setLocalSettings((prev) => {
+        const currentValue = prev[key];
+        let clampedValue = currentValue;
 
+        if (typeof currentValue === "string" && currentValue === "") {
+          return prev;
+        }
+
+        const numValue =
+          typeof currentValue === "string"
+            ? parseInt(currentValue)
+            : currentValue;
+
+        if (!isNaN(numValue)) {
           switch (key) {
             case "focusSession":
-              clampedValue = Math.max(5, Math.min(180, currentValue));
+              clampedValue = Math.max(5, Math.min(180, numValue));
               break;
             case "shortBreak":
-              clampedValue = Math.max(1, Math.min(30, currentValue));
+              clampedValue = Math.max(1, Math.min(30, numValue));
               break;
             case "longBreak":
-              clampedValue = Math.max(5, Math.min(60, currentValue));
+              clampedValue = Math.max(5, Math.min(60, numValue));
               break;
           }
+        }
 
-          return {
-            ...prev,
-            [key]: clampedValue,
-          };
-        });
-      }
+        return {
+          ...prev,
+          [key]: clampedValue,
+        };
+      });
     }, 700);
   };
 
@@ -148,7 +150,8 @@ export function TimerSettingsDialog({
         <DialogHeader>
           <DialogTitle>Timer Settings</DialogTitle>
           <DialogDescription>
-            Configure your focus session and break durations (5-180 minutes).
+            Configure your focus session and break durations. Long break occurs
+            every 4th break.
           </DialogDescription>
         </DialogHeader>
         <SettingsForm settings={settingsForm} />

@@ -1,15 +1,7 @@
 "use client";
 
-import { EndSessionDialog } from "@/components/pomodoro/end-session-dialog";
-import { TimerSettingsDialog } from "@/components/pomodoro/timer-settings-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { usePomodoro } from "@/lib/pomodoro/use-pomodoro";
 import { useUserSettings } from "@/hooks/use-user-timer-settings";
@@ -18,27 +10,12 @@ import { invalidateSessionsCache } from "@/components/pomodoro/pomodoro-sessions
 import { type TimerSettings } from "@/lib/validation/pomodoro";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EndSessionDialog } from "@/components/pomodoro/end-session-dialog";
+import { TimerSettingsDialog } from "@/components/pomodoro/timer-settings-dialog";
+import { formatTime } from "@/lib/utils";
+import { Timer, FocusTimerCardProps } from "@/lib/pomodoro";
 
-import React, { useEffect, useState, useMemo, useCallback } from "react";
-
-interface Timer {
-  remainingSeconds: number;
-  isRunning: boolean;
-  isFinished: boolean;
-  start: () => void;
-  pause: () => void;
-  reset: () => void;
-}
-
-function formatTime(seconds: number) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-type Props = {
-  saveAction: (title: string, durationSeconds: number) => Promise<void>;
-};
+import React, { useEffect, useState, useCallback } from "react";
 
 function TimerWrapper({
   duration,
@@ -60,7 +37,7 @@ function TimerWrapper({
   return <>{render(timer)}</>;
 }
 
-export function FocusTimerCard({ saveAction }: Props) {
+export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
   const {
     settings: timerSettings,
     isLoading,
@@ -79,9 +56,10 @@ export function FocusTimerCard({ saveAction }: Props) {
   const {
     currentSessionDuration,
     sessionStarted,
+    sessionType,
+    isLongBreak,
     isPending,
     startSession,
-    resetSession,
     endSessionEarly,
     handleTimerUpdate,
   } = useSessionState({ timerSettings, saveAction: memoizedSaveAction });
@@ -92,21 +70,6 @@ export function FocusTimerCard({ saveAction }: Props) {
   React.useEffect(() => {
     setHasHydrated(true);
   }, []);
-
-  const nextSessionIndicator = useMemo(
-    () =>
-      hasHydrated &&
-      currentSessionDuration !== timerSettings.focusSession &&
-      sessionStarted ? (
-        <> • Next session: {timerSettings.focusSession} min</>
-      ) : null,
-    [
-      hasHydrated,
-      currentSessionDuration,
-      timerSettings.focusSession,
-      sessionStarted,
-    ],
-  );
 
   const handleSettingsChange = async (newSettings: TimerSettings) => {
     try {
@@ -123,7 +86,11 @@ export function FocusTimerCard({ saveAction }: Props) {
 
   return (
     <TimerWrapper
-      key={`timer-${currentSessionDuration}-${sessionStarted}`}
+      key={
+        sessionStarted
+          ? undefined
+          : `timer-${currentSessionDuration}-${sessionType}`
+      }
       duration={currentSessionDuration}
       onTimerUpdate={handleTimerUpdateStable}
       render={(timer) => {
@@ -147,25 +114,27 @@ export function FocusTimerCard({ saveAction }: Props) {
                 />
               </div>
               <CardHeader className="text-center">
-                <CardTitle>Focus Session</CardTitle>
-                <CardDescription
-                  suppressHydrationWarning
-                  className="text-center"
-                >
-                  {isLoading ? (
-                    <Skeleton className="h-4 w-50 mt-1 mx-auto" />
-                  ) : (
-                    <>
-                      Current session: {currentSessionDuration} min
-                      {nextSessionIndicator}
-                    </>
-                  )}
-                </CardDescription>
+                <CardTitle suppressHydrationWarning>
+                  {sessionType === "focus"
+                    ? "Focus Session"
+                    : isLongBreak
+                      ? "Long Break"
+                      : "Short Break"}
+                </CardTitle>
               </CardHeader>
 
               <CardContent className="flex flex-col items-center justify-between gap-8 min-h-[400px]">
                 <div className="flex flex-col items-center gap-8">
-                  <CircularProgress progress={progress}>
+                  <CircularProgress
+                    progress={progress}
+                    circleColor={
+                      sessionType === "focus"
+                        ? ""
+                        : isLongBreak
+                          ? "text-blue-600"
+                          : "text-emerald-900"
+                    }
+                  >
                     <div className="text-center">
                       <div
                         className="text-6xl font-mono font-semibold tabular-nums"
@@ -179,25 +148,15 @@ export function FocusTimerCard({ saveAction }: Props) {
                       </div>
                     </div>
                   </CircularProgress>
-
-                  {timer.isFinished && (
-                    <div className="text-center space-y-1">
-                      <div className="text-4xl">🎉</div>
-                      <div className="text-lg font-semibold text-green-600 dark:text-green-400">
-                        Session Complete!
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Great work!
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <div
                   className="flex gap-3 w-full justify-center"
                   suppressHydrationWarning
                 >
-                  {timer.isRunning ? (
+                  {isLoading ? (
+                    <Skeleton className="h-10 min-w-[140px]" />
+                  ) : timer.isRunning ? (
                     <Button
                       onClick={timer.pause}
                       size="lg"
@@ -209,13 +168,18 @@ export function FocusTimerCard({ saveAction }: Props) {
                   ) : timer.isFinished ? (
                     <Button
                       onClick={() => {
-                        timer.reset();
-                        resetSession();
+                        timer.start();
+                        startSession();
                       }}
                       size="lg"
                       className="min-w-[140px]"
+                      suppressHydrationWarning
                     >
-                      Start New Session
+                      {sessionType === "focus"
+                        ? isLongBreak
+                          ? "Start Long Break"
+                          : "Start Short Break"
+                        : "Start Focus Session"}
                     </Button>
                   ) : (
                     <div className="flex gap-3">
@@ -228,7 +192,11 @@ export function FocusTimerCard({ saveAction }: Props) {
                         className="min-w-[140px]"
                       >
                         <span suppressHydrationWarning>
-                          {sessionStarted ? "Resume" : "Start Focus"}
+                          {sessionStarted
+                            ? "Resume"
+                            : sessionType === "focus"
+                              ? "Start Focus"
+                              : "Start Break"}
                         </span>
                       </Button>
                       {hasHydrated && sessionStarted && (
@@ -252,6 +220,7 @@ export function FocusTimerCard({ saveAction }: Props) {
               onOpenChange={setShowEndDialog}
               onConfirm={handleEndSessionConfirm}
               elapsedMinutes={elapsedMinutes}
+              sessionType={sessionType}
             />
           </>
         );

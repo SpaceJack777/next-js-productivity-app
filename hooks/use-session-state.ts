@@ -1,17 +1,9 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-
-function debounce<TArgs extends unknown[], TReturn>(
-  func: (...args: TArgs) => TReturn,
-  delay: number,
-): (...args: TArgs) => void {
-  let timeoutId: NodeJS.Timeout;
-  return (...args: TArgs) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-}
+import { clearStorage, getFromStorage } from "@/lib/storage";
 
 interface Timer {
   reset: () => void;
@@ -19,8 +11,54 @@ interface Timer {
   isRunning: boolean;
 }
 
+export type SessionType = "focus" | "break";
+
+interface SessionState {
+  sessionDuration: number;
+  sessionStarted: boolean;
+  sessionType: SessionType;
+  completedFocusSessions: number;
+  setSessionDuration: (duration: number) => void;
+  setSessionStarted: (started: boolean) => void;
+  setSessionType: (type: SessionType) => void;
+  incrementCompletedSessions: () => void;
+  resetSession: () => void;
+}
+
+const useSessionStore = create<SessionState>()(
+  persist(
+    (set) => ({
+      sessionDuration: 25,
+      sessionStarted: false,
+      sessionType: "focus",
+      completedFocusSessions: 0,
+      setSessionDuration: (duration) => set({ sessionDuration: duration }),
+      setSessionStarted: (started) => set({ sessionStarted: started }),
+      setSessionType: (type) => set({ sessionType: type }),
+      incrementCompletedSessions: () =>
+        set((state) => ({
+          completedFocusSessions: state.completedFocusSessions + 1,
+        })),
+      resetSession: () => set({ sessionStarted: false, sessionType: "focus" }),
+    }),
+    {
+      name: "session-storage",
+      partialize: (state) => ({
+        sessionDuration: state.sessionDuration,
+        sessionStarted: state.sessionStarted,
+        sessionType: state.sessionType,
+        completedFocusSessions: state.completedFocusSessions,
+      }),
+    },
+  ),
+);
+
 interface UseSessionStateProps {
-  timerSettings: { focusSession: number };
+  timerSettings: {
+    focusSession: number;
+    shortBreak: number;
+    longBreak: number;
+  };
   saveAction: (title: string, durationSeconds: number) => Promise<void>;
 }
 
@@ -28,160 +66,195 @@ export function useSessionState({
   timerSettings,
   saveAction,
 }: UseSessionStateProps) {
-  const getStoredSessionDuration = (): number => {
-    if (typeof window === "undefined") return timerSettings.focusSession;
-    const saved = localStorage.getItem("currentSessionDuration");
-    return saved ? parseInt(saved) : timerSettings.focusSession;
-  };
-
-  const getStoredSessionStarted = (): boolean => {
-    if (typeof window === "undefined") return false;
-    const saved = localStorage.getItem("sessionStarted");
-    return saved === "true";
-  };
-
-  const setStoredSessionDuration = (duration: number): void => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("currentSessionDuration", duration.toString());
-    }
-  };
-
-  const setStoredSessionStarted = (started: boolean): void => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("sessionStarted", started.toString());
-    }
-  };
-
-  const clearStoredSession = (): void => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("sessionStarted");
-      localStorage.removeItem("currentSessionDuration");
-    }
-  };
-
-  const [storedSessionDuration, setStoredSessionDurationState] =
-    useState<number>(getStoredSessionDuration);
-  const [sessionStarted, setSessionStarted] = useState<boolean>(
-    getStoredSessionStarted,
-  );
+  const {
+    sessionDuration,
+    sessionStarted,
+    sessionType,
+    completedFocusSessions,
+    setSessionDuration,
+    setSessionStarted,
+    setSessionType,
+    incrementCompletedSessions,
+    resetSession: storeResetSession,
+  } = useSessionStore();
 
   const [isPending, startTransition] = useTransition();
-
-  const currentSessionDuration = useMemo(() => {
-    return sessionStarted ? storedSessionDuration : timerSettings.focusSession;
-  }, [sessionStarted, storedSessionDuration, timerSettings.focusSession]);
-
   const hasSavedRef = useRef(false);
   const router = useRouter();
 
-  const debouncedSetStoredSession = useMemo(
-    () =>
-      debounce((started: boolean, duration: number) => {
-        setStoredSessionStarted(started);
-        setStoredSessionDuration(duration);
-      }, 150),
-    [],
-  );
+  const isLongBreak =
+    completedFocusSessions > 0 && completedFocusSessions % 4 === 0;
 
   useEffect(() => {
-    debouncedSetStoredSession(sessionStarted, storedSessionDuration);
-  }, [sessionStarted, storedSessionDuration, debouncedSetStoredSession]);
+    const timerState = getFromStorage("pomodoro-timer-state", null);
+    if (!timerState && sessionStarted) {
+      setSessionStarted(false);
+    }
+  }, [sessionStarted, setSessionStarted]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && !sessionStarted) {
-      localStorage.setItem(
-        "currentSessionDuration",
-        timerSettings.focusSession.toString(),
-      );
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStoredSessionDurationState(timerSettings.focusSession);
+    if (!sessionStarted) {
+      const expectedDuration =
+        sessionType === "focus"
+          ? timerSettings.focusSession
+          : isLongBreak
+            ? timerSettings.longBreak
+            : timerSettings.shortBreak;
+      if (sessionDuration !== expectedDuration) {
+        clearStorage("pomodoro-timer-state");
+        setSessionDuration(expectedDuration);
+      }
     }
   }, [
-    timerSettings.focusSession,
     sessionStarted,
-    setStoredSessionDurationState,
+    sessionType,
+    sessionDuration,
+    timerSettings.focusSession,
+    timerSettings.shortBreak,
+    timerSettings.longBreak,
+    isLongBreak,
+    setSessionDuration,
   ]);
+
+  const currentSessionDuration = sessionStarted
+    ? sessionDuration
+    : sessionType === "focus"
+      ? timerSettings.focusSession
+      : isLongBreak
+        ? timerSettings.longBreak
+        : timerSettings.shortBreak;
 
   const startSession = useCallback(() => {
     setSessionStarted(true);
-  }, []);
+  }, [setSessionStarted]);
 
   const resetSession = useCallback(() => {
-    setSessionStarted(false);
-    clearStoredSession();
-  }, []);
+    storeResetSession();
+  }, [storeResetSession]);
 
   const endSessionEarly = useCallback(
     (timer: Timer, elapsedMinutes: number) => {
-      if (elapsedMinutes >= 5 && !hasSavedRef.current) {
-        hasSavedRef.current = true;
-        startTransition(() => {
-          saveAction("Focus Session (Ended Early)", elapsedMinutes * 60).then(
-            () => {
-              timer.reset();
-              setStoredSessionDurationState(timerSettings.focusSession);
-              setSessionStarted(false);
-              clearStoredSession();
-              router.refresh();
-            },
-          );
-        });
+      if (sessionType === "focus") {
+        if (elapsedMinutes >= 5 && !hasSavedRef.current) {
+          hasSavedRef.current = true;
+          startTransition(() => {
+            saveAction("Focus Session (Ended Early)", elapsedMinutes * 60)
+              .then(() => {
+                incrementCompletedSessions();
+                const nextIsLongBreak = (completedFocusSessions + 1) % 4 === 0;
+                const nextBreakDuration = nextIsLongBreak
+                  ? timerSettings.longBreak
+                  : timerSettings.shortBreak;
+                timer.reset();
+                clearStorage("pomodoro-timer-state");
+                setSessionDuration(nextBreakDuration);
+                setSessionType("break");
+                setSessionStarted(false);
+                router.refresh();
+              })
+              .catch((error) => {
+                console.error("Failed to save session:", error);
+                hasSavedRef.current = false;
+              });
+          });
+        } else {
+          timer.reset();
+          setSessionDuration(timerSettings.focusSession);
+          setSessionStarted(false);
+          storeResetSession();
+        }
       } else {
         timer.reset();
-        setStoredSessionDurationState(timerSettings.focusSession);
+        clearStorage("pomodoro-timer-state");
+        setSessionDuration(timerSettings.focusSession);
+        setSessionType("focus");
         setSessionStarted(false);
-        clearStoredSession();
       }
     },
     [
+      sessionType,
+      completedFocusSessions,
       timerSettings.focusSession,
+      timerSettings.shortBreak,
+      timerSettings.longBreak,
       saveAction,
       startTransition,
       router,
-      setStoredSessionDurationState,
+      setSessionDuration,
+      setSessionType,
       setSessionStarted,
+      incrementCompletedSessions,
+      storeResetSession,
     ],
   );
 
   const handleTimerComplete = useCallback(
-    (sessionDuration: number) => {
+    (sessionDuration: number, currentSessionType: SessionType) => {
       if (!hasSavedRef.current) {
         hasSavedRef.current = true;
-        startTransition(() => {
-          saveAction("Focus Session", sessionDuration * 60).then(() => {
-            setStoredSessionDurationState(timerSettings.focusSession);
-            setSessionStarted(false);
-            clearStoredSession();
-            router.refresh();
+
+        if (currentSessionType === "focus") {
+          startTransition(() => {
+            saveAction("Focus Session", sessionDuration * 60)
+              .then(() => {
+                incrementCompletedSessions();
+                const nextIsLongBreak = (completedFocusSessions + 1) % 4 === 0;
+                const nextBreakDuration = nextIsLongBreak
+                  ? timerSettings.longBreak
+                  : timerSettings.shortBreak;
+                clearStorage("pomodoro-timer-state");
+                setSessionDuration(nextBreakDuration);
+                setSessionType("break");
+                setSessionStarted(false);
+                router.refresh();
+              })
+              .catch((error) => {
+                console.error("Failed to save session:", error);
+                hasSavedRef.current = false;
+              });
           });
-        });
+        } else {
+          clearStorage("pomodoro-timer-state");
+          setSessionDuration(timerSettings.focusSession);
+          setSessionType("focus");
+          setSessionStarted(false);
+        }
       }
     },
     [
+      completedFocusSessions,
       timerSettings.focusSession,
+      timerSettings.shortBreak,
+      timerSettings.longBreak,
       saveAction,
       startTransition,
       router,
-      setStoredSessionDurationState,
+      setSessionDuration,
+      setSessionType,
       setSessionStarted,
+      incrementCompletedSessions,
     ],
   );
 
   const handleTimerUpdate = useCallback(
     (timer: Timer, currentSessionDuration: number) => {
       if (timer.isFinished) {
-        handleTimerComplete(currentSessionDuration);
+        handleTimerComplete(currentSessionDuration, sessionType);
       } else if (!timer.isRunning && !timer.isFinished) {
         hasSavedRef.current = false;
       }
     },
-    [handleTimerComplete],
+    [handleTimerComplete, sessionType],
   );
 
   return {
     currentSessionDuration,
     sessionStarted,
+    sessionType,
+    isLongBreak,
+    completedFocusSessions,
     setSessionStarted,
+    setSessionDuration,
     isPending,
     startSession,
     resetSession,

@@ -12,25 +12,12 @@ import {
 
 import { AppPagination } from "../app-pagination";
 import { FocusTimerTableSkeleton } from "./focus-timer-table-skeleton";
+import { FocusTimerInfoProps } from "@/lib/pomodoro";
 import { useMemo, useState } from "react";
-
-type Pomodoro = {
-  id: string;
-  title: string;
-  duration: number;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 const PAGE_SIZE = 8;
 
-export function FocusTimerInfo({
-  sessions,
-  loading,
-}: {
-  sessions: Pomodoro[];
-  loading?: boolean;
-}) {
+export function FocusTimerInfo({ sessions, loading }: FocusTimerInfoProps) {
   const [page, setPage] = useState(1);
 
   const { currentSessions, totalPages } = useMemo(() => {

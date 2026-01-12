@@ -1,16 +1,18 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 interface CircularProgressProps {
   progress: number; // 0-1
   className?: string;
+  circleColor?: string;
   children?: React.ReactNode;
 }
 
 export function CircularProgress({
   progress,
-  className = '',
+  className = "",
+  circleColor = "",
   children,
 }: CircularProgressProps) {
   const size = 320;
@@ -44,7 +46,7 @@ export function CircularProgress({
           strokeWidth={strokeWidth}
           fill="none"
           strokeLinecap="round"
-          className="text-primary"
+          className={`${circleColor}`}
           strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
           animate={{
@@ -52,7 +54,7 @@ export function CircularProgress({
           }}
           transition={{
             duration: 1,
-            ease: 'easeInOut',
+            ease: "easeInOut",
           }}
         />
       </svg>
