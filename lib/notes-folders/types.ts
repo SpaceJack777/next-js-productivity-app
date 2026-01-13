@@ -2,6 +2,9 @@ import type { NotesFolder } from "@prisma/client";
 
 export type NotesFolderWithChildren = NotesFolder & {
   children: NotesFolderWithChildren[];
+  _count?: {
+    notes: number;
+  };
 };
 
 export type CreateNotesFolderInput = {

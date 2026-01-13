@@ -31,9 +31,15 @@ import * as LucideIcons from "lucide-react";
 
 type NotesFolderListProps = {
   folders: NotesFolderWithChildren[];
+  selectedFolderId?: string;
+  onFolderSelect: (folderId: string) => void;
 };
 
-export default function NotesFolderList({ folders }: NotesFolderListProps) {
+export default function NotesFolderList({
+  folders,
+  selectedFolderId,
+  onFolderSelect,
+}: NotesFolderListProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -66,13 +72,32 @@ export default function NotesFolderList({ folders }: NotesFolderListProps) {
         folder.icon
       ] || LucideIcons.Folder;
     const hasChildren = folder.children && folder.children.length > 0;
+    const noteCount = folder._count?.notes ?? 0;
 
     return (
       <FolderItem key={folder.id} value={folder.id}>
-        <div className="flex items-center justify-between w-full group">
-          <FolderTrigger icon={<IconComponent />} hasChildren={hasChildren}>
-            {folder.name}
-          </FolderTrigger>
+        <div
+          className={`flex items-center justify-between w-full group ${
+            selectedFolderId === folder.id
+              ? "[&>div_[data-slot='folder-highlight']]:bg-accent [&>div_[data-slot='folder-highlight']]:rounded-lg"
+              : ""
+          }`}
+        >
+          <div
+            className="flex-1 cursor-pointer"
+            onClick={() => onFolderSelect(folder.id)}
+          >
+            <FolderTrigger icon={<IconComponent />} hasChildren={hasChildren}>
+              <div className="flex items-center gap-2">
+                <span>{folder.name}</span>
+                {noteCount > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                    {noteCount}
+                  </span>
+                )}
+              </div>
+            </FolderTrigger>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

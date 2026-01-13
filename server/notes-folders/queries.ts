@@ -5,11 +5,26 @@ export async function getNotesFolders(userId: string) {
   const folders = await prisma.notesFolder.findMany({
     where: { userId },
     include: {
+      _count: {
+        select: { notes: true },
+      },
       children: {
         include: {
+          _count: {
+            select: { notes: true },
+          },
           children: {
             include: {
-              children: true,
+              _count: {
+                select: { notes: true },
+              },
+              children: {
+                include: {
+                  _count: {
+                    select: { notes: true },
+                  },
+                },
+              },
             },
           },
         },
