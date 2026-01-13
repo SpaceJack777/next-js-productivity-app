@@ -1,5 +1,11 @@
-import * as React from 'react';
-import { FolderIcon, FolderOpenIcon, FileIcon } from 'lucide-react';
+import * as React from "react";
+import {
+  FolderIcon,
+  FolderOpenIcon,
+  FileIcon,
+  ChevronRight,
+} from "lucide-react";
+import { motion } from "motion/react";
 
 import {
   Files as FilesPrimitive,
@@ -15,21 +21,22 @@ import {
   FileHighlight as FileHighlightPrimitive,
   File as FilePrimitive,
   FileIcon as FileIconPrimitive,
+  useFolder,
   type FilesProps as FilesPrimitiveProps,
   type FolderItemProps as FolderItemPrimitiveProps,
   type FolderContentProps as FolderContentPrimitiveProps,
   type FileProps as FilePrimitiveProps,
   type FileLabelProps as FileLabelPrimitiveProps,
-} from '@/components/animate-ui/primitives/radix/files';
-import { cn } from '@/lib/utils';
+} from "@/components/animate-ui/primitives/radix/files";
+import { cn } from "@/lib/utils";
 
-type GitStatus = 'untracked' | 'modified' | 'deleted';
+type GitStatus = "untracked" | "modified" | "deleted";
 
 type FilesProps = FilesPrimitiveProps;
 
 function Files({ className, children, ...props }: FilesProps) {
   return (
-    <FilesPrimitive className={cn('p-2 w-full', className)} {...props}>
+    <FilesPrimitive className={cn("p-2 w-full", className)} {...props}>
       <FilesHighlightPrimitive className="bg-accent rounded-lg pointer-events-none">
         {children}
       </FilesHighlightPrimitive>
@@ -51,12 +58,29 @@ function FolderItem(props: FolderItemProps) {
 
 type FolderTriggerProps = FileLabelPrimitiveProps & {
   gitStatus?: GitStatus;
+  icon?: React.ReactNode;
+  hasChildren?: boolean;
 };
+
+function ChevronIcon() {
+  const { isOpen } = useFolder();
+
+  return (
+    <motion.div
+      animate={{ rotate: isOpen ? 90 : 0 }}
+      transition={{ duration: 0.15 }}
+    >
+      <ChevronRight className="size-4" />
+    </motion.div>
+  );
+}
 
 function FolderTrigger({
   children,
   className,
   gitStatus,
+  icon,
+  hasChildren,
   ...props
 }: FolderTriggerProps) {
   return (
@@ -66,18 +90,25 @@ function FolderTrigger({
           <FolderPrimitive className="flex items-center justify-between gap-2 p-2 pointer-events-none">
             <div
               className={cn(
-                'flex items-center gap-2',
-                gitStatus === 'untracked' && 'text-green-400',
-                gitStatus === 'modified' && 'text-amber-400',
-                gitStatus === 'deleted' && 'text-red-400',
+                "flex items-center gap-2",
+                gitStatus === "untracked" && "text-green-400",
+                gitStatus === "modified" && "text-amber-400",
+                gitStatus === "deleted" && "text-red-400",
               )}
             >
-              <FolderIconPrimitive
-                closeIcon={<FolderIcon className="size-4.5" />}
-                openIcon={<FolderOpenIcon className="size-4.5" />}
-              />
+              {hasChildren && <ChevronIcon />}
+              {icon ? (
+                <div className="flex items-center justify-center size-4.5">
+                  {icon}
+                </div>
+              ) : (
+                <FolderIconPrimitive
+                  closeIcon={<FolderIcon className="size-4.5" />}
+                  openIcon={<FolderOpenIcon className="size-4.5" />}
+                />
+              )}
               <FileLabelPrimitive
-                className={cn('text-sm', className)}
+                className={cn("text-sm", className)}
                 {...props}
               >
                 {children}
@@ -87,10 +118,10 @@ function FolderTrigger({
             {gitStatus && (
               <span
                 className={cn(
-                  'rounded-full size-2',
-                  gitStatus === 'untracked' && 'bg-green-400',
-                  gitStatus === 'modified' && 'bg-amber-400',
-                  gitStatus === 'deleted' && 'bg-red-400',
+                  "rounded-full size-2",
+                  gitStatus === "untracked" && "bg-green-400",
+                  gitStatus === "modified" && "bg-amber-400",
+                  gitStatus === "deleted" && "bg-red-400",
                 )}
               />
             )}
@@ -127,26 +158,26 @@ function FileItem({
     <FileHighlightPrimitive>
       <FilePrimitive
         className={cn(
-          'flex items-center justify-between gap-2 p-2 pointer-events-none',
-          gitStatus === 'untracked' && 'text-green-400',
-          gitStatus === 'modified' && 'text-amber-400',
-          gitStatus === 'deleted' && 'text-red-400',
+          "flex items-center justify-between gap-2 p-2 pointer-events-none",
+          gitStatus === "untracked" && "text-green-400",
+          gitStatus === "modified" && "text-amber-400",
+          gitStatus === "deleted" && "text-red-400",
         )}
       >
         <div className="flex items-center gap-2">
           <FileIconPrimitive>
             <Icon className="size-4.5" />
           </FileIconPrimitive>
-          <FileLabelPrimitive className={cn('text-sm', className)} {...props}>
+          <FileLabelPrimitive className={cn("text-sm", className)} {...props}>
             {children}
           </FileLabelPrimitive>
         </div>
 
         {gitStatus && (
           <span className="text-sm font-medium">
-            {gitStatus === 'untracked' && 'U'}
-            {gitStatus === 'modified' && 'M'}
-            {gitStatus === 'deleted' && 'D'}
+            {gitStatus === "untracked" && "U"}
+            {gitStatus === "modified" && "M"}
+            {gitStatus === "deleted" && "D"}
           </span>
         )}
       </FilePrimitive>

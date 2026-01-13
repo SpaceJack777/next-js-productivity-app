@@ -1,5 +1,13 @@
-import NotesFolderList from "./notes-folder-list";
+import NotesFolderList from "@/components/notes/notes-folder-list";
+import { getNotesFolders } from "@/server/notes-folders/queries";
+import { getSession } from "@/lib/get-session";
+import { redirect } from "next/navigation";
 
-export default function NotesWorkspace() {
-  return <NotesFolderList />;
+export default async function NotesWorkspace() {
+  const session = await getSession();
+  if (!session?.user?.id) redirect("/auth/signin");
+
+  const folders = await getNotesFolders(session.user.id);
+
+  return <NotesFolderList folders={folders} />;
 }

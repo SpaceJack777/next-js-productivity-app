@@ -19,6 +19,7 @@ model User {
   pomodoros     Pomodoro[]
   sessions      Session[]
   timerSettings UserTimerSettings?
+  notesFolders  NotesFolder[]
 
   @@map("users")
 }
@@ -78,4 +79,22 @@ model UserTimerSettings {
   user         User   @relation(fields: [userId], references: [id])
 
   @@map("user_timer_settings")
+}
+
+model NotesFolder {
+  id        String        @id @default(cuid())
+  name      String
+  icon      String        @default("Folder")
+  parentId  String?
+  userId    String
+  order     Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    NotesFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  NotesFolder[] @relation("FolderHierarchy")
+
+  @@index([userId])
+  @@index([parentId])
+  @@map("notes_folders")
 }
