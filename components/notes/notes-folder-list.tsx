@@ -121,7 +121,7 @@ export default function NotesFolderList({ folders }: NotesFolderListProps) {
 
   return (
     <>
-      <Card className="max-w-[300px]">
+      <Card className="max-w-[300px] w-full">
         <CardHeader className="flex items-center justify-between">
           <CardTitle>Folders</CardTitle>
           <CardAction>
