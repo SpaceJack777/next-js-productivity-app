@@ -12,7 +12,7 @@ import { CardAction, CardHeader, CardTitle } from "../ui/card";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import {
-  FolderPlus,
+  Plus,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -175,19 +175,20 @@ export default function NotesFolderList({
 
   return (
     <>
-      <Card className="max-w-[300px] w-full">
-        <CardHeader className="flex items-center justify-between">
+      <Card className="max-w-[300px] w-full relative">
+        <CardHeader className="gap-0 ">
           <CardTitle>Folders</CardTitle>
           <CardAction>
             <Button
               variant="outline"
-              size="sm"
+              size="xs"
+              className="absolute right-4 top-3"
               onClick={() => {
                 setParentIdForCreate(undefined);
                 setShowCreateDialog(true);
               }}
             >
-              <FolderPlus /> New folder
+              <Plus className="size-3.5" /> New folder
             </Button>
           </CardAction>
         </CardHeader>

@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Card, CardTitle, CardHeader, CardContent } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { PlusIcon, Folder } from "lucide-react";
+import { EmptyState } from "../ui/empty-state";
+import { PlusIcon, Folder, FileX, FolderOpen } from "lucide-react";
 import { createNote } from "@/server/notes/actions";
 import type { NoteWithFolder } from "@/lib/notes/types";
 import type { NotesFolderWithChildren } from "@/lib/notes-folders/types";
@@ -14,12 +15,16 @@ type NotesListProps = {
   notes: NoteWithFolder[];
   selectedFolderId?: string;
   selectedFolder?: NotesFolderWithChildren | null;
+  selectedNoteId?: string;
+  onNoteSelect: (noteId: string) => void;
 };
 
 export default function NotesList({
   notes,
   selectedFolderId,
   selectedFolder,
+  selectedNoteId,
+  onNoteSelect,
 }: NotesListProps) {
   const [noteTitle, setNoteTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -92,19 +97,26 @@ export default function NotesList({
 
       <CardContent>
         {!selectedFolderId ? (
-          <div className="text-center text-sm text-muted-foreground py-8">
-            Select a folder to view notes
-          </div>
+          <EmptyState
+            title="No folder selected"
+            description="Select a folder to view its notes"
+            icon={FolderOpen}
+          />
         ) : notes.length === 0 ? (
-          <div className="text-center text-sm text-muted-foreground py-8">
-            No notes in this folder. Create one to get started.
-          </div>
+          <EmptyState
+            title="No notes yet"
+            description="Create your first note to get started"
+            icon={FileX}
+          />
         ) : (
           <div className="space-y-2">
             {notes.map((note) => (
               <div
                 key={note.id}
-                className="p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+                className={`p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors ${
+                  selectedNoteId === note.id ? "bg-accent" : ""
+                }`}
+                onClick={() => onNoteSelect(note.id)}
               >
                 <h3 className="font-medium">{note.title}</h3>
               </div>
