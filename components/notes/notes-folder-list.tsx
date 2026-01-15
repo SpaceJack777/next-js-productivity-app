@@ -11,12 +11,14 @@ import {
 import { CardAction, CardHeader, CardTitle } from "../ui/card";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
+import { EmptyState } from "../ui/empty-state";
 import {
   Plus,
   MoreHorizontal,
   Pencil,
   Trash2,
   FolderPlus as SubFolderIcon,
+  FolderX,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -197,9 +199,11 @@ export default function NotesFolderList({
             {rootFolders.map((folder) => renderFolder(folder))}
           </Files>
         ) : (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            No folders yet. Create one to get started.
-          </div>
+          <EmptyState
+            title="No folders yet"
+            description="Create your first folder to get started"
+            icon={FolderX}
+          />
         )}
       </Card>
 

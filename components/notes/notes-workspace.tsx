@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import NotesFolderList from "@/components/notes/notes-folder-list";
 import NotesList from "@/components/notes/notes-list";
 import type { NotesFolderWithChildren } from "@/lib/notes-folders/types";
@@ -16,50 +17,107 @@ export default function NotesWorkspace({
   folders,
   notes,
 }: NotesWorkspaceProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [selectedFolderId, setSelectedFolderId] = useState<string>();
   const [selectedNoteId, setSelectedNoteId] = useState<string>();
 
-  const filteredNotes = selectedFolderId
-    ? notes.filter((note) => note.folderId === selectedFolderId)
-    : [];
+  // Initialize from URL once on mount
+  useEffect(() => {
+    const folder = searchParams.get("folder");
+    const note = searchParams.get("note");
 
-  const selectedNote = selectedNoteId
-    ? notes.find((note) => note.id === selectedNoteId) || null
-    : null;
+    if (folder) setSelectedFolderId(folder);
+    if (note) setSelectedNoteId(note);
 
-  const findSelectedFolder = (
-    folders: NotesFolderWithChildren[],
-    folderId: string,
-  ): NotesFolderWithChildren | null => {
-    for (const folder of folders) {
-      if (folder.id === folderId) {
-        return folder;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - runs once only
+
+  // Fast URL updates - mirror local state to URL
+  const updateUrl = useCallback(
+    (folderId?: string, noteId?: string) => {
+      const params = new URLSearchParams(window.location.search);
+
+      if (folderId) params.set("folder", folderId);
+      else params.delete("folder");
+
+      if (noteId) params.set("note", noteId);
+      else params.delete("note");
+
+      router.replace(`${pathname}?${params.toString()}`, {
+        scroll: false,
+      });
+    },
+    [router, pathname],
+  );
+
+  // Performance optimizations
+  const folderMap = useMemo(() => {
+    const map = new Map<string, NotesFolderWithChildren>();
+    const addToMap = (folders: NotesFolderWithChildren[]) => {
+      for (const folder of folders) {
+        map.set(folder.id, folder);
+        if (folder.children) addToMap(folder.children);
       }
-      if (folder.children) {
-        const found = findSelectedFolder(folder.children, folderId);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
+    };
+    addToMap(folders);
+    return map;
+  }, [folders]);
 
-  const selectedFolder = selectedFolderId
-    ? findSelectedFolder(folders, selectedFolderId)
-    : null;
+  const filteredNotes = useMemo(
+    () =>
+      selectedFolderId
+        ? notes.filter((note) => note.folderId === selectedFolderId)
+        : [],
+    [selectedFolderId, notes],
+  );
+
+  const selectedNote = useMemo(
+    () =>
+      selectedNoteId
+        ? notes.find((note) => note.id === selectedNoteId) || null
+        : null,
+    [selectedNoteId, notes],
+  );
+
+  const selectedFolder = useMemo(
+    () => (selectedFolderId ? folderMap.get(selectedFolderId) || null : null),
+    [selectedFolderId, folderMap],
+  );
+
+  // Handlers update local state instantly, then mirror to URL
+  const handleFolderSelect = useCallback(
+    (folderId: string) => {
+      setSelectedFolderId(folderId);
+      setSelectedNoteId(undefined); // Clear note when switching folders
+      updateUrl(folderId, undefined);
+    },
+    [updateUrl],
+  );
+
+  const handleNoteSelect = useCallback(
+    (noteId: string) => {
+      setSelectedNoteId(noteId);
+      updateUrl(selectedFolderId, noteId);
+    },
+    [updateUrl, selectedFolderId],
+  );
 
   return (
     <div className="flex gap-4">
       <NotesFolderList
         folders={folders}
         selectedFolderId={selectedFolderId}
-        onFolderSelect={setSelectedFolderId}
+        onFolderSelect={handleFolderSelect}
       />
       <NotesList
         notes={filteredNotes}
         selectedFolderId={selectedFolderId}
         selectedFolder={selectedFolder}
         selectedNoteId={selectedNoteId}
-        onNoteSelect={setSelectedNoteId}
+        onNoteSelect={handleNoteSelect}
       />
       <NoteEditor note={selectedNote} />
     </div>
