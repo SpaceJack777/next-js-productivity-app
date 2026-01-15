@@ -21,6 +21,26 @@ export default function NotesWorkspace({
     ? notes.filter((note) => note.folderId === selectedFolderId)
     : [];
 
+  const findSelectedFolder = (
+    folders: NotesFolderWithChildren[],
+    folderId: string,
+  ): NotesFolderWithChildren | null => {
+    for (const folder of folders) {
+      if (folder.id === folderId) {
+        return folder;
+      }
+      if (folder.children) {
+        const found = findSelectedFolder(folder.children, folderId);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const selectedFolder = selectedFolderId
+    ? findSelectedFolder(folders, selectedFolderId)
+    : null;
+
   return (
     <div className="flex gap-4">
       <NotesFolderList
@@ -28,7 +48,11 @@ export default function NotesWorkspace({
         selectedFolderId={selectedFolderId}
         onFolderSelect={setSelectedFolderId}
       />
-      <NotesList notes={filteredNotes} selectedFolderId={selectedFolderId} />
+      <NotesList
+        notes={filteredNotes}
+        selectedFolderId={selectedFolderId}
+        selectedFolder={selectedFolder}
+      />
     </div>
   );
 }

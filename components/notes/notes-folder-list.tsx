@@ -50,6 +50,7 @@ export default function NotesFolderList({
   const [parentIdForCreate, setParentIdForCreate] = useState<
     string | undefined
   >();
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const handleCreateSubfolder = (parentId: string) => {
     setParentIdForCreate(parentId);
@@ -66,6 +67,16 @@ export default function NotesFolderList({
     setShowDeleteDialog(true);
   };
 
+  const getTotalNoteCount = (folder: NotesFolderWithChildren): number => {
+    let total = folder._count?.notes ?? 0;
+    if (folder.children) {
+      for (const child of folder.children) {
+        total += getTotalNoteCount(child);
+      }
+    }
+    return total;
+  };
+
   const renderFolder = (folder: NotesFolderWithChildren) => {
     const IconComponent =
       (LucideIcons as unknown as Record<string, React.ComponentType>)[
@@ -73,6 +84,7 @@ export default function NotesFolderList({
       ] || LucideIcons.Folder;
     const hasChildren = folder.children && folder.children.length > 0;
     const noteCount = folder._count?.notes ?? 0;
+    const totalNoteCount = getTotalNoteCount(folder);
 
     return (
       <FolderItem key={folder.id} value={folder.id}>
@@ -91,40 +103,57 @@ export default function NotesFolderList({
               <div className="flex items-center gap-2">
                 <span>{folder.name}</span>
                 {noteCount > 0 && (
-                  <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
-                    {noteCount}
-                  </span>
+                  <>
+                    <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                      {noteCount}
+                    </span>
+                    {hasChildren && (
+                      <>
+                        /{" "}
+                        <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                          {totalNoteCount}
+                        </span>
+                      </>
+                    )}
+                  </>
                 )}
               </div>
             </FolderTrigger>
           </div>
-          <DropdownMenu>
+          <DropdownMenu
+            open={openDropdownId === folder.id}
+            onOpenChange={(open) => setOpenDropdownId(open ? folder.id : null)}
+          >
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                className={`h-6 w-6 transition-opacity ${
+                  selectedFolderId === folder.id || openDropdownId === folder.id
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-100"
+                }`}
                 onClick={(e) => e.stopPropagation()}
               >
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreHorizontal className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() => handleCreateSubfolder(folder.id)}
               >
-                <SubFolderIcon className="h-4 w-4 mr-2" />
+                <SubFolderIcon className="size-4 mr-2" />
                 New Subfolder
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleEdit(folder)}>
-                <Pencil className="h-4 w-4 mr-2" />
+                <Pencil className="size-4 mr-2" />
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => handleDelete(folder)}
                 className="text-destructive focus:text-destructive"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="size-4 mr-2" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
