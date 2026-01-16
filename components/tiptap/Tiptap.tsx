@@ -16,6 +16,7 @@ import python from "highlight.js/lib/languages/python";
 import bash from "highlight.js/lib/languages/bash";
 import css from "highlight.js/lib/languages/css";
 import json from "highlight.js/lib/languages/json";
+import xml from "highlight.js/lib/languages/xml";
 
 type TiptapProps = {
   content?: string;
@@ -29,6 +30,10 @@ lowlight.register("python", python);
 lowlight.register("bash", bash);
 lowlight.register("css", css);
 lowlight.register("json", json);
+lowlight.register("xml", xml);
+lowlight.register("html", xml);
+lowlight.register("jsx", javascript);
+lowlight.register("tsx", typescript);
 
 const Tiptap = ({ content, onChange }: TiptapProps) => {
   const extensions = useMemo(

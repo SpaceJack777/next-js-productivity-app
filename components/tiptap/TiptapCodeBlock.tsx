@@ -16,7 +16,7 @@ export function TiptapCodeBlock({ node }: NodeViewProps) {
   };
 
   return (
-    <NodeViewWrapper className="relative group my-4 bg-accent rounded-md">
+    <NodeViewWrapper className="relative group my-4 bg-accent  rounded-md">
       <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
         <Button
           size="sm"
