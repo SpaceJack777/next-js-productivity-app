@@ -2,25 +2,37 @@
 
 import { useEditor, EditorContent, ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import TiptapToolbar from "./TiptapToolbar";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import { TiptapTaskItem } from "./TiptapTaskItem";
 import { TiptapCodeBlock } from "./TiptapCodeBlock";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
-import { common, createLowlight } from "lowlight";
+import { createLowlight } from "lowlight";
+import typescript from "highlight.js/lib/languages/typescript";
+import javascript from "highlight.js/lib/languages/javascript";
+import python from "highlight.js/lib/languages/python";
+import bash from "highlight.js/lib/languages/bash";
+import css from "highlight.js/lib/languages/css";
+import json from "highlight.js/lib/languages/json";
 
 type TiptapProps = {
   content?: string;
   onChange?: (content: string) => void;
 };
 
-const lowlight = createLowlight(common);
+const lowlight = createLowlight();
+lowlight.register("typescript", typescript);
+lowlight.register("javascript", javascript);
+lowlight.register("python", python);
+lowlight.register("bash", bash);
+lowlight.register("css", css);
+lowlight.register("json", json);
 
 const Tiptap = ({ content, onChange }: TiptapProps) => {
-  const editor = useEditor({
-    extensions: [
+  const extensions = useMemo(
+    () => [
       StarterKit.configure({
         codeBlock: false,
         heading: {
@@ -51,6 +63,11 @@ const Tiptap = ({ content, onChange }: TiptapProps) => {
         },
       }),
     ],
+    [],
+  );
+
+  const editor = useEditor({
+    extensions,
     content,
     immediatelyRender: false,
     editorProps: {

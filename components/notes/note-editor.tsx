@@ -5,10 +5,14 @@ import type { NoteWithFolder } from "@/lib/notes/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Check, Save } from "lucide-react";
-import Tiptap from "../tiptap/Tiptap";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { updateNote } from "@/server/notes/actions";
+import dynamic from "next/dynamic";
+
+const Tiptap = dynamic(() => import("../tiptap/Tiptap"), {
+  ssr: false,
+});
 
 type NoteEditorProps = {
   note: NoteWithFolder | null;

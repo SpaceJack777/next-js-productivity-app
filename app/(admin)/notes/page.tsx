@@ -1,8 +1,10 @@
-import NotesWorkspace from "@/components/notes/notes-workspace";
 import { getSession } from "@/lib/get-session";
 import { getNotesFolders } from "@/server/notes-folders/queries";
 import { getNotes } from "@/server/notes/queries";
 import { redirect } from "next/navigation";
+import NotesWorkspace from "@/components/notes/notes-workspace";
+
+export const revalidate = 0;
 
 export default async function Page() {
   const session = await getSession();

@@ -1,8 +1,9 @@
-import { FocusTimerCard, PomodoroSessionsClient } from "@/components/pomodoro";
 import { getSession } from "@/lib/get-session";
 import { savePomodoro } from "@/server/pomodoro/actions";
-
 import { redirect } from "next/navigation";
+import { FocusTimerCard, PomodoroSessionsClient } from "@/components/pomodoro";
+
+export const revalidate = 0;
 
 export default async function Page() {
   const session = await getSession();

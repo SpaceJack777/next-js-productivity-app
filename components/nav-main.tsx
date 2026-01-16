@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   SidebarGroup,
@@ -9,17 +9,17 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from '@/components/animate-ui/components/radix/sidebar';
+} from "@/components/animate-ui/components/radix/sidebar";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+} from "@/components/ui/collapsible";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-import { ChevronRight, type LucideIcon } from 'lucide-react';
+import { ChevronRight, type LucideIcon } from "lucide-react";
 
 export function NavMain({
   items,
@@ -42,7 +42,7 @@ export function NavMain({
       <SidebarMenu>
         {items.map((item) => {
           const isActive =
-            pathname === item.url || pathname.startsWith(item.url + '/');
+            pathname === item.url || pathname.startsWith(item.url + "/");
 
           const hasSubItems = item.items?.length;
 
@@ -54,7 +54,7 @@ export function NavMain({
                   isActive={isActive}
                   tooltip={item.title}
                 >
-                  <Link href={item.url}>
+                  <Link href={item.url} prefetch={true}>
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
                   </Link>
@@ -87,7 +87,7 @@ export function NavMain({
                       return (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild isActive={isSubActive}>
-                            <Link href={subItem.url}>
+                            <Link href={subItem.url} prefetch={true}>
                               <span>{subItem.title}</span>
                             </Link>
                           </SidebarMenuSubButton>
