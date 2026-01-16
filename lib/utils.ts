@@ -11,3 +11,20 @@ export function formatTime(seconds: number) {
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
+
+export function debounce<TArgs extends unknown[], TReturn>(
+  func: (...args: TArgs) => TReturn,
+  delay: number,
+): (...args: TArgs) => void {
+  let timeoutId: NodeJS.Timeout | undefined;
+
+  return (...args: TArgs) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+}

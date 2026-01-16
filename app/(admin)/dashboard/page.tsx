@@ -1,12 +1,12 @@
-import { getSession } from '@/lib/get-session';
+import { getSession } from "@/lib/get-session";
 
-import { redirect } from 'next/navigation';
+import { redirect } from "next/navigation";
 
 export default async function Page() {
   const session = await getSession();
 
   if (!session) {
-    redirect('/auth/signin');
+    redirect("/auth/signin");
   }
 
   return (
@@ -20,10 +20,13 @@ export default async function Page() {
             Welcome back!
           </div>
           <div className="text-2xl font-bold">
-            {session.user?.name || 'User'}
+            {session.user?.name || "User"}
           </div>
         </div>
       </div>
+      <h1 className="h-1 ">h1</h1>
+      <h2>h2</h2>
+      <h3>h3</h3>
     </div>
   );
 }

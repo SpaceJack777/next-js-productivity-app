@@ -35,10 +35,7 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
             </div>
             <ThemeToggle />
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            {children}
-            <div className="bg-muted/50 min-h-100vh flex-1 rounded-xl md:min-h-min" />
-          </div>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </SessionProvider>
