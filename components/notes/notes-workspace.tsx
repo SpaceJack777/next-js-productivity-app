@@ -23,8 +23,8 @@ export default function NotesWorkspace({
 
   const [selectedFolderId, setSelectedFolderId] = useState<string>();
   const [selectedNoteId, setSelectedNoteId] = useState<string>();
+  const [isLoadingUrlParams, setIsLoadingUrlParams] = useState(true);
 
-  // Initialize from URL once on mount
   useEffect(() => {
     const folder = searchParams.get("folder");
     const note = searchParams.get("note");
@@ -32,10 +32,11 @@ export default function NotesWorkspace({
     if (folder) setSelectedFolderId(folder);
     if (note) setSelectedNoteId(note);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - runs once only
+    setIsLoadingUrlParams(false);
 
-  // Fast URL updates - mirror local state to URL
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const updateUrl = useCallback(
     (folderId?: string, noteId?: string) => {
       const params = new URLSearchParams(window.location.search);
@@ -53,7 +54,6 @@ export default function NotesWorkspace({
     [router, pathname],
   );
 
-  // Performance optimizations
   const folderMap = useMemo(() => {
     const map = new Map<string, NotesFolderWithChildren>();
     const addToMap = (folders: NotesFolderWithChildren[]) => {
@@ -87,11 +87,10 @@ export default function NotesWorkspace({
     [selectedFolderId, folderMap],
   );
 
-  // Handlers update local state instantly, then mirror to URL
   const handleFolderSelect = useCallback(
     (folderId: string) => {
       setSelectedFolderId(folderId);
-      setSelectedNoteId(undefined); // Clear note when switching folders
+      setSelectedNoteId(undefined);
       updateUrl(folderId, undefined);
     },
     [updateUrl],
@@ -106,7 +105,7 @@ export default function NotesWorkspace({
   );
 
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-4 h-full">
       <NotesFolderList
         folders={folders}
         selectedFolderId={selectedFolderId}
@@ -118,8 +117,13 @@ export default function NotesWorkspace({
         selectedFolder={selectedFolder}
         selectedNoteId={selectedNoteId}
         onNoteSelect={handleNoteSelect}
+        isLoadingUrlParams={isLoadingUrlParams}
       />
-      <NoteEditor note={selectedNote} />
+      <NoteEditor
+        key={selectedNote?.id}
+        note={selectedNote}
+        isLoadingUrlParams={isLoadingUrlParams}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Card, CardTitle, CardHeader, CardContent } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { EmptyState } from "../ui/empty-state";
+import { Spinner } from "../ui/spinner";
 import { PlusIcon, Folder, FileX, FolderOpen } from "lucide-react";
 import { createNote } from "@/server/notes/actions";
 import type { NoteWithFolder } from "@/lib/notes/types";
@@ -17,6 +18,7 @@ type NotesListProps = {
   selectedFolder?: NotesFolderWithChildren | null;
   selectedNoteId?: string;
   onNoteSelect: (noteId: string) => void;
+  isLoadingUrlParams?: boolean;
 };
 
 export default function NotesList({
@@ -25,6 +27,7 @@ export default function NotesList({
   selectedFolder,
   selectedNoteId,
   onNoteSelect,
+  isLoadingUrlParams = false,
 }: NotesListProps) {
   const [noteTitle, setNoteTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -61,8 +64,18 @@ export default function NotesList({
       ]) ||
     Folder;
 
+  if (isLoadingUrlParams) {
+    return (
+      <Card className="w-full max-w-[300px] md:h-full">
+        <div className="flex items-center justify-center h-full">
+          <Spinner className="text-muted-foreground" />
+        </div>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="w-full max-w-[300px]">
+    <Card className="w-full max-w-[300px] md:h-full">
       <CardHeader className="flex items-center justify-between">
         <CardTitle>Notes</CardTitle>
         {selectedFolder && (
@@ -118,7 +131,7 @@ export default function NotesList({
                 }`}
                 onClick={() => onNoteSelect(note.id)}
               >
-                <h3 className="font-medium">{note.title}</h3>
+                <h3 className="font-medium">{note.title || "*Untitled*"}</h3>
               </div>
             ))}
           </div>

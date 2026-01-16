@@ -177,7 +177,7 @@ export default function NotesFolderList({
 
   return (
     <>
-      <Card className="max-w-[300px] w-full relative">
+      <Card className="max-w-[300px] w-full md:h-full relative">
         <CardHeader className="gap-0 ">
           <CardTitle>Folders</CardTitle>
           <CardAction>
