@@ -75,7 +75,7 @@ export default function NotesList({
   }
 
   return (
-    <Card className="w-full max-w-[300px] md:h-full">
+    <Card className="w-full max-w-[300px] md:h-full flex flex-col">
       <CardHeader className="flex items-center justify-between">
         <CardTitle>Notes</CardTitle>
         {selectedFolder && (
@@ -85,8 +85,8 @@ export default function NotesList({
           </div>
         )}
       </CardHeader>
-      <CardContent>
-        {selectedFolderId && (
+      {selectedFolderId && (
+        <CardContent>
           <div className="flex gap-2 items-center w-full">
             <Input
               placeholder="Create note"
@@ -105,8 +105,8 @@ export default function NotesList({
               <PlusIcon className="h-4 w-4" />
             </Button>
           </div>
-        )}
-      </CardContent>
+        </CardContent>
+      )}
 
       <CardContent>
         {!selectedFolderId ? (

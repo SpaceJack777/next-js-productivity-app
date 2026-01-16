@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { NoteWithFolder } from "@/lib/notes/types";
-import { Card, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Check, Save } from "lucide-react";
 import Tiptap from "../tiptap/Tiptap";
@@ -96,11 +96,13 @@ export default function NoteEditor({
 
   if (!note) {
     return (
-      <Card className="flex-1 md:h-full">
-        <EmptyState
-          title="No note selected"
-          description="Select a note from the list to start editing"
-        />
+      <Card className="flex flex-1">
+        <CardContent className="mt-8">
+          <EmptyState
+            title="No note selected"
+            description="Select a note from the list to start editing"
+          />
+        </CardContent>
       </Card>
     );
   }

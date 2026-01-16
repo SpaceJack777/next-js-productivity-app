@@ -8,7 +8,7 @@ import {
   Files,
   SubFiles,
 } from "@/components/animate-ui/components/radix/files";
-import { CardAction, CardHeader, CardTitle } from "../ui/card";
+import { CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { EmptyState } from "../ui/empty-state";
@@ -177,33 +177,33 @@ export default function NotesFolderList({
 
   return (
     <>
-      <Card className="max-w-[300px] w-full md:h-full relative">
-        <CardHeader className="gap-0 ">
+      <Card className="max-w-[300px] w-full md:h-full relative flex flex-col">
+        <CardHeader className="flex items-center justify-between gap-0">
           <CardTitle>Folders</CardTitle>
-          <CardAction>
-            <Button
-              variant="outline"
-              size="xs"
-              className="absolute right-4 top-3"
-              onClick={() => {
-                setParentIdForCreate(undefined);
-                setShowCreateDialog(true);
-              }}
-            >
-              <Plus className="size-3.5" /> New folder
-            </Button>
-          </CardAction>
+          <Button
+            variant="outline"
+            className="absolute top-3 right-4"
+            size="xs"
+            onClick={() => {
+              setParentIdForCreate(undefined);
+              setShowCreateDialog(true);
+            }}
+          >
+            <Plus className="size-3.5" /> New folder
+          </Button>
         </CardHeader>
         {rootFolders.length > 0 ? (
           <Files className="w-full h-full p-0 px-4">
             {rootFolders.map((folder) => renderFolder(folder))}
           </Files>
         ) : (
-          <EmptyState
-            title="No folders yet"
-            description="Create your first folder to get started"
-            icon={FolderX}
-          />
+          <CardContent>
+            <EmptyState
+              title="No folders yet"
+              description="Create your first folder to get started"
+              icon={FolderX}
+            />
+          </CardContent>
         )}
       </Card>
 
