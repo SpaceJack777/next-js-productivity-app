@@ -1,30 +1,49 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
-// Standalone client for seeding (do NOT import ../prisma/prisma.ts)
 const prisma = new PrismaClient();
 
 async function main() {
-  // Find your local user
   const user = await prisma.user.findUnique({
-    where: { email: 'locacl@local.com' }, // replace with your local email
+    where: { email: "laurynas@space.lt" },
   });
 
-  if (!user) throw new Error('User not found! Create a local user first.');
+  if (!user) throw new Error("User not found! Create a local user first.");
 
-  // Create 10 example Pomodoro sessions
-  const sessions = Array.from({ length: 10 }).map((_, i) => ({
-    title: `Pomodoro Session ${i + 1}`,
-    duration: 25 * 60,
-    userId: user.id,
-    createdAt: new Date(Date.now() - i * 1000 * 60 * 60), // spaced by 1 hour
-    updatedAt: new Date(),
-  }));
+  // Create random Pomodoro sessions for the last 30 days
+  const sessions = [];
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  // Create between 20-40 sessions randomly distributed over the last 30 days
+  const numSessions = Math.floor(Math.random() * 21) + 20; // 20-40 sessions
+
+  for (let i = 0; i < numSessions; i++) {
+    // Random date within the last 30 days
+    const randomTime =
+      thirtyDaysAgo.getTime() +
+      Math.random() * (Date.now() - thirtyDaysAgo.getTime());
+    const createdAt = new Date(randomTime);
+
+    // Random duration between 25-60 minutes (in seconds)
+    const duration = (Math.floor(Math.random() * 36) + 25) * 60;
+
+    sessions.push({
+      title: `Focus Session ${i + 1}`,
+      duration,
+      userId: user.id,
+      createdAt,
+      updatedAt: createdAt,
+    });
+  }
+
+  // Sort by creation date
+  sessions.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
   for (const s of sessions) {
     await prisma.pomodoro.create({ data: s });
   }
 
-  console.log('Seeded Pomodoro sessions for user:', user.email);
+  console.log("Seeded Pomodoro sessions for user:", user.email);
 }
 
 main()

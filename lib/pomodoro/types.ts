@@ -3,20 +3,20 @@ import { TimerSettings } from "@/lib/validation/pomodoro";
 export type SessionType = "focus" | "break";
 
 // Hook-related types
-export interface TimerState {
+export type TimerState = {
   remainingMs: number;
   isRunning: boolean;
   isFinished: boolean;
   startedAt: number | null;
   pausedAt: number | null;
   durationMs: number;
-}
+};
 
-export interface InternalTimerState {
+export type InternalTimerState = {
   remainingMs: number;
   isRunning: boolean;
   isFinished: boolean;
-}
+};
 
 export type TimerAction =
   | { type: "INITIALIZE"; payload: InternalTimerState }
@@ -26,32 +26,32 @@ export type TimerAction =
   | { type: "TICK"; payload: { remainingMs: number; isFinished: boolean } };
 
 // Component-related types
-export interface Timer {
+export type Timer = {
   remainingSeconds: number;
   isRunning: boolean;
   isFinished: boolean;
   start: () => void;
   pause: () => void;
   reset: () => void;
-}
+};
 
-export interface Pomodoro {
+export type Pomodoro = {
   id: string;
   title: string;
   duration: number;
   createdAt: Date;
   updatedAt: Date;
-}
+};
 
-export interface FocusTimerInfoProps {
+export type FocusTimerInfoProps = {
   sessions: Pomodoro[];
   loading?: boolean;
-}
+};
 
-export interface TimerSettingsDialogProps {
+export type TimerSettingsDialogProps = {
   settings: TimerSettings;
   onSettingsChange: (settings: TimerSettings) => void;
-}
+};
 
 export type FocusTimerCardProps = {
   saveAction: (title: string, durationSeconds: number) => Promise<void>;

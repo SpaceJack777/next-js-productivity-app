@@ -10,9 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { getSession } from "@/lib/get-session";
 import { SessionProvider } from "@/lib/session-context";
 import { redirect } from "next/navigation";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, Suspense } from "react";
 
-export default async function DashboardLayout({ children }: PropsWithChildren) {
+async function AuthenticatedLayout({ children }: PropsWithChildren) {
   const session = await getSession();
 
   if (!session) {
@@ -35,9 +35,19 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
             </div>
             <ThemeToggle />
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0 h-full">
+            {children}
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </SessionProvider>
+  );
+}
+
+export default function DashboardLayout({ children }: PropsWithChildren) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthenticatedLayout>{children}</AuthenticatedLayout>
+    </Suspense>
   );
 }

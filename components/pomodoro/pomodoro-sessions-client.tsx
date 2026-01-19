@@ -57,5 +57,9 @@ export function PomodoroSessionsClient() {
     loadSessions();
   }, [cacheValid, lastInvalidation]);
 
-  return <FocusTimerInfo sessions={sessions} loading={loading} />;
+  return (
+    <div className="h-full">
+      <FocusTimerInfo sessions={sessions} loading={loading} />
+    </div>
+  );
 }

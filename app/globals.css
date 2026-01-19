@@ -164,7 +164,7 @@
     color: hsl(var(--foreground));
     font-family: "JetBrainsMono", monospace;
     margin: 0;
-    padding: 2rem;
+    padding: 0;
     overflow-x: auto;
     position: relative;
 

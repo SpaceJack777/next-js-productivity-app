@@ -106,7 +106,7 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
 
         return (
           <>
-            <Card className="relative">
+            <Card className="relative h-full">
               <div className="absolute top-4 right-4 z-10">
                 <TimerSettingsDialog
                   settings={timerSettings}

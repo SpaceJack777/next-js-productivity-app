@@ -12,6 +12,19 @@ export function formatTime(seconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+export function formatDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+
+  if (hours === 0) {
+    return `${mins}m`;
+  } else if (mins === 0) {
+    return `${hours}h`;
+  } else {
+    return `${hours}h ${mins}m`;
+  }
+}
+
 export function debounce<TArgs extends unknown[], TReturn>(
   func: (...args: TArgs) => TReturn,
   delay: number,
