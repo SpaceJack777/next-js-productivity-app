@@ -6,7 +6,11 @@ import { CircularProgress } from "@/components/ui/circular-progress";
 import { usePomodoro } from "@/lib/pomodoro/use-pomodoro";
 import { useUserSettings } from "@/hooks/use-user-timer-settings";
 import { useSessionState } from "@/hooks/use-session-state";
-import { invalidateSessionsCache } from "@/components/pomodoro/pomodoro-sessions-client";
+import {
+  allSessionsRefresh,
+  todaySessionsRefresh,
+  totalSessionsRefresh,
+} from "@/lib/pomodoro/refresh-events";
 import { type TimerSettings } from "@/lib/validation/pomodoro";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,7 +51,9 @@ export function FocusTimerCard({ saveAction }: FocusTimerCardProps) {
   const memoizedSaveAction = useCallback(
     async (title: string, durationSeconds: number) => {
       const result = await saveAction(title, durationSeconds);
-      invalidateSessionsCache();
+      allSessionsRefresh.trigger();
+      todaySessionsRefresh.trigger();
+      totalSessionsRefresh.trigger();
       return result;
     },
     [saveAction],

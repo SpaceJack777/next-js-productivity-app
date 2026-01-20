@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import {
   Card,
@@ -18,6 +18,9 @@ import {
 } from "@/components/ui/chart";
 import { getPomodoroSessions } from "@/server/pomodoro/queries";
 import { TotalFocusSessionsSkeleton } from "./skeletons/total-focus-sessions-skeleton";
+import { totalSessionsRefresh } from "@/lib/pomodoro/refresh-events";
+import { EmptyState } from "../ui/empty-state";
+import { Calendar } from "lucide-react";
 
 const chartConfig = {
   sessions: {
@@ -32,35 +35,40 @@ export function TotalFocusSessions() {
   >([]);
   const [totalSessions, setTotalSessions] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
+  const refreshKey = totalSessionsRefresh.useRefresh();
 
   React.useEffect(() => {
     async function fetchSessions() {
       try {
         const sessions = await getPomodoroSessions();
 
-        // Group sessions by date and count them
         const sessionsByDate = sessions.reduce(
           (acc, session) => {
-            const date = session.createdAt.toISOString().split("T")[0]; // YYYY-MM-DD format
-            acc[date] = (acc[date] || 0) + 1;
+            const sessionDate = new Date(session.createdAt);
+            const dateStr = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, "0")}-${String(sessionDate.getDate()).padStart(2, "0")}`;
+            acc[dateStr] = (acc[dateStr] || 0) + 1;
             return acc;
           },
           {} as Record<string, number>,
         );
 
-        // Convert to chart data format and sort by date
-        const chartDataArray = Object.entries(sessionsByDate)
-          .map(([date, sessions]) => ({ date, sessions }))
-          .sort((a, b) => a.date.localeCompare(b.date));
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
 
-        // Get last 30 days of data
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const recentData = chartDataArray.filter(
-          (item) => new Date(item.date) >= thirtyDaysAgo,
-        );
+        const allDates: Array<{ date: string; sessions: number }> = [];
+        const currentDate = new Date(thirtyDaysAgo);
 
-        setChartData(recentData);
+        while (currentDate <= today) {
+          const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")}`;
+          allDates.push({
+            date: dateStr,
+            sessions: sessionsByDate[dateStr] || 0,
+          });
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        setChartData(allDates);
         setTotalSessions(sessions.length);
       } catch (error) {
         console.error("Failed to fetch sessions:", error);
@@ -70,7 +78,7 @@ export function TotalFocusSessions() {
     }
 
     fetchSessions();
-  }, []);
+  }, [refreshKey]);
 
   if (loading) {
     return <TotalFocusSessionsSkeleton />;
@@ -98,51 +106,64 @@ export function TotalFocusSessions() {
           </div>
         </CardHeader>
         <CardContent className="px-2 sm:p-6">
-          <ChartContainer
-            config={chartConfig}
-            className="aspect-auto h-[250px] w-full"
-          >
-            <BarChart
-              accessibilityLayer
-              data={chartData}
-              margin={{
-                left: 12,
-                right: 12,
-              }}
+          {totalSessions === 0 ? (
+            <EmptyState
+              icon={Calendar}
+              title="No sessions yet"
+              description="Complete your first focus session to see your statistics."
+            />
+          ) : (
+            <ChartContainer
+              config={chartConfig}
+              className="aspect-auto h-[250px] w-full"
             >
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="date"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                minTickGap={32}
-                tickFormatter={(value) => {
-                  const date = new Date(value);
-                  return date.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  });
+              <BarChart
+                accessibilityLayer
+                data={chartData}
+                margin={{
+                  left: -40,
+                  right: 12,
                 }}
-              />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    className="w-[150px]"
-                    nameKey="sessions"
-                    labelFormatter={(value) => {
-                      return new Date(value).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      });
-                    }}
-                  />
-                }
-              />
-              <Bar dataKey="sessions" fill="var(--color-sessions)" />
-            </BarChart>
-          </ChartContainer>
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  minTickGap={32}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return date.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    });
+                  }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `${value}`}
+                />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      className="w-[150px]"
+                      nameKey="sessions"
+                      labelFormatter={(value) => {
+                        return new Date(value).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        });
+                      }}
+                    />
+                  }
+                />
+                <Bar dataKey="sessions" fill="var(--color-sessions)" />
+              </BarChart>
+            </ChartContainer>
+          )}
         </CardContent>
       </Card>
     </div>

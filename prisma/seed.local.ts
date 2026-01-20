@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const user = await prisma.user.findUnique({
-    where: { email: "laurynas@space.lt" },
+    where: { email: "asdfasdfasdf@asdfasdf.lt" },
   });
 
   if (!user) throw new Error("User not found! Create a local user first.");
