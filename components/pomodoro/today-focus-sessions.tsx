@@ -1,35 +1,15 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
-import { useEffect, useState } from "react";
-import { getTodayPomodoroSessions } from "@/server/pomodoro/queries";
-import { type Pomodoro } from "@/lib/pomodoro";
 import { PomodoroChart } from "./pomodoro-chart";
 import { formatDuration } from "@/lib/utils";
 import { TodayFocusSessionsSkeleton } from "./skeletons/today-focus-sessions-skeleton";
-import { todaySessionsRefresh } from "@/lib/pomodoro/refresh-events";
 import { EmptyState } from "../ui/empty-state";
 import { Clock } from "lucide-react";
+import { usePomodoroData } from "@/contexts/pomodoro-context";
 
 export function TodayFocusSessions() {
-  const [sessions, setSessions] = useState<Pomodoro[]>([]);
-  const [loading, setLoading] = useState(true);
-  const refreshKey = todaySessionsRefresh.useRefresh();
-
-  useEffect(() => {
-    const loadSessions = async () => {
-      try {
-        const todaySessions = await getTodayPomodoroSessions();
-        setSessions(todaySessions);
-      } catch (error) {
-        console.warn("Failed to load today's sessions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSessions();
-  }, [refreshKey]);
+  const { todaySessions: sessions, loading } = usePomodoroData();
 
   const totalMinutes = sessions.reduce(
     (acc, session) => acc + Math.round(session.duration / 60),

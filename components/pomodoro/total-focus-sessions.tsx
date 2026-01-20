@@ -16,11 +16,10 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { getPomodoroSessions } from "@/server/pomodoro/queries";
 import { TotalFocusSessionsSkeleton } from "./skeletons/total-focus-sessions-skeleton";
-import { totalSessionsRefresh } from "@/lib/pomodoro/refresh-events";
 import { EmptyState } from "../ui/empty-state";
 import { Calendar } from "lucide-react";
+import { usePomodoroData } from "@/contexts/pomodoro-context";
 
 const chartConfig = {
   sessions: {
@@ -30,55 +29,40 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function TotalFocusSessions() {
+  const { allSessions: sessions, loading } = usePomodoroData();
   const [chartData, setChartData] = React.useState<
     Array<{ date: string; sessions: number }>
   >([]);
-  const [totalSessions, setTotalSessions] = React.useState(0);
-  const [loading, setLoading] = React.useState(true);
-  const refreshKey = totalSessionsRefresh.useRefresh();
 
   React.useEffect(() => {
-    async function fetchSessions() {
-      try {
-        const sessions = await getPomodoroSessions();
+    const sessionsByDate = sessions.reduce(
+      (acc, session) => {
+        const sessionDate = new Date(session.createdAt);
+        const dateStr = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, "0")}-${String(sessionDate.getDate()).padStart(2, "0")}`;
+        acc[dateStr] = (acc[dateStr] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
-        const sessionsByDate = sessions.reduce(
-          (acc, session) => {
-            const sessionDate = new Date(session.createdAt);
-            const dateStr = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, "0")}-${String(sessionDate.getDate()).padStart(2, "0")}`;
-            acc[dateStr] = (acc[dateStr] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>,
-        );
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
 
-        const today = new Date();
-        const thirtyDaysAgo = new Date(today);
-        thirtyDaysAgo.setDate(today.getDate() - 30);
+    const allDates: Array<{ date: string; sessions: number }> = [];
+    const currentDate = new Date(thirtyDaysAgo);
 
-        const allDates: Array<{ date: string; sessions: number }> = [];
-        const currentDate = new Date(thirtyDaysAgo);
-
-        while (currentDate <= today) {
-          const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")}`;
-          allDates.push({
-            date: dateStr,
-            sessions: sessionsByDate[dateStr] || 0,
-          });
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        setChartData(allDates);
-        setTotalSessions(sessions.length);
-      } catch (error) {
-        console.error("Failed to fetch sessions:", error);
-      } finally {
-        setLoading(false);
-      }
+    while (currentDate <= today) {
+      const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")}`;
+      allDates.push({
+        date: dateStr,
+        sessions: sessionsByDate[dateStr] || 0,
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    fetchSessions();
-  }, [refreshKey]);
+    setChartData(allDates);
+  }, [sessions]);
 
   if (loading) {
     return <TotalFocusSessionsSkeleton />;
@@ -100,13 +84,13 @@ export function TotalFocusSessions() {
                 Total Sessions
               </span>
               <span className="text-lg leading-none font-bold sm:text-3xl">
-                {totalSessions.toLocaleString()}
+                n {sessions.length.toLocaleString()}
               </span>
             </div>
           </div>
         </CardHeader>
         <CardContent className="px-2 sm:p-6">
-          {totalSessions === 0 ? (
+          {sessions.length === 0 ? (
             <EmptyState
               icon={Calendar}
               title="No sessions yet"
