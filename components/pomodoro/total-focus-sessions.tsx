@@ -84,7 +84,7 @@ export function TotalFocusSessions() {
                 Total Sessions
               </span>
               <span className="text-lg leading-none font-bold sm:text-3xl">
-                n {sessions.length.toLocaleString()}
+                {sessions.length.toLocaleString()}
               </span>
             </div>
           </div>
