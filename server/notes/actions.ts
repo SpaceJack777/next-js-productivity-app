@@ -3,16 +3,25 @@
 import { prisma } from "@/prisma/prisma";
 import { getSession } from "@/lib/get-session";
 import { revalidatePath } from "next/cache";
-import type { CreateNoteInput, UpdateNoteInput } from "@/lib/notes/types";
+import {
+  createNoteSchema,
+  updateNoteSchema,
+  deleteNoteSchema,
+  type CreateNoteInput,
+  type UpdateNoteInput,
+  type DeleteNoteInput,
+} from "@/lib/validation/notes";
 
 export async function createNote(input: CreateNoteInput) {
+  const validated = createNoteSchema.parse(input);
+
   const session = await getSession();
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
 
   const folder = await prisma.notesFolder.findFirst({
-    where: { id: input.folderId, userId: session.user.id },
+    where: { id: validated.folderId, userId: session.user.id },
   });
 
   if (!folder) {
@@ -21,9 +30,9 @@ export async function createNote(input: CreateNoteInput) {
 
   const note = await prisma.note.create({
     data: {
-      title: input.title,
-      content: input.content,
-      folderId: input.folderId,
+      title: validated.title,
+      content: validated.content,
+      folderId: validated.folderId,
       userId: session.user.id,
     },
   });
@@ -33,22 +42,24 @@ export async function createNote(input: CreateNoteInput) {
 }
 
 export async function updateNote(input: UpdateNoteInput) {
+  const validated = updateNoteSchema.parse(input);
+
   const session = await getSession();
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
 
   const note = await prisma.note.findFirst({
-    where: { id: input.id, userId: session.user.id },
+    where: { id: validated.id, userId: session.user.id },
   });
 
   if (!note) {
     throw new Error("Note not found");
   }
 
-  if (input.folderId && input.folderId !== note.folderId) {
+  if (validated.folderId && validated.folderId !== note.folderId) {
     const folder = await prisma.notesFolder.findFirst({
-      where: { id: input.folderId, userId: session.user.id },
+      where: { id: validated.folderId, userId: session.user.id },
     });
 
     if (!folder) {
@@ -57,11 +68,11 @@ export async function updateNote(input: UpdateNoteInput) {
   }
 
   const updated = await prisma.note.update({
-    where: { id: input.id },
+    where: { id: validated.id },
     data: {
-      title: input.title,
-      content: input.content,
-      ...(input.folderId && { folderId: input.folderId }),
+      title: validated.title,
+      content: validated.content,
+      ...(validated.folderId && { folderId: validated.folderId }),
     },
   });
 
@@ -69,14 +80,16 @@ export async function updateNote(input: UpdateNoteInput) {
   return updated;
 }
 
-export async function deleteNote(noteId: string) {
+export async function deleteNote(noteId: DeleteNoteInput) {
+  const validated = deleteNoteSchema.parse(noteId);
+
   const session = await getSession();
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
 
   const note = await prisma.note.findFirst({
-    where: { id: noteId, userId: session.user.id },
+    where: { id: validated, userId: session.user.id },
   });
 
   if (!note) {
@@ -84,7 +97,7 @@ export async function deleteNote(noteId: string) {
   }
 
   await prisma.note.delete({
-    where: { id: noteId },
+    where: { id: validated },
   });
 
   revalidatePath("/notes");

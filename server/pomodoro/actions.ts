@@ -17,7 +17,7 @@ export async function savePomodoro(title: string, durationSeconds: number) {
     return;
   }
 
-  const validatedData = savePomodoroSchema.parse({
+  const validated = savePomodoroSchema.parse({
     title,
     durationSeconds,
   });
@@ -25,8 +25,8 @@ export async function savePomodoro(title: string, durationSeconds: number) {
   await prisma.pomodoro.create({
     data: {
       userId: session.user.id,
-      title: validatedData.title,
-      duration: validatedData.durationSeconds,
+      title: validated.title,
+      duration: validated.durationSeconds,
     },
   });
 }

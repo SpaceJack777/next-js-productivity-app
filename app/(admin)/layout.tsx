@@ -10,9 +10,17 @@ import { Separator } from "@/components/ui/separator";
 import { getSession } from "@/lib/get-session";
 import { SessionProvider } from "@/lib/session-context";
 import { redirect } from "next/navigation";
-import { PropsWithChildren, Suspense } from "react";
+import { PropsWithChildren, ReactNode, Suspense } from "react";
+import { LayoutLoadingSkeleton } from "@/components/layout-loading-skeleton";
 
-async function AuthenticatedLayout({ children }: PropsWithChildren) {
+type AuthenticatedLayoutProps = PropsWithChildren & {
+  action?: ReactNode;
+};
+
+async function AuthenticatedLayout({
+  children,
+  action,
+}: AuthenticatedLayoutProps) {
   const session = await getSession();
 
   if (!session) {
@@ -33,7 +41,10 @@ async function AuthenticatedLayout({ children }: PropsWithChildren) {
               />
               <Breadcrumbs />
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              {action}
+            </div>
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0 h-full">
             {children}
@@ -44,10 +55,15 @@ async function AuthenticatedLayout({ children }: PropsWithChildren) {
   );
 }
 
-export default function DashboardLayout({ children }: PropsWithChildren) {
+type LayoutProps = {
+  children: ReactNode;
+  action?: ReactNode;
+};
+
+export default function Layout({ children, action }: LayoutProps) {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <AuthenticatedLayout>{children}</AuthenticatedLayout>
+    <Suspense fallback={<LayoutLoadingSkeleton />}>
+      <AuthenticatedLayout action={action}>{children}</AuthenticatedLayout>
     </Suspense>
   );
 }

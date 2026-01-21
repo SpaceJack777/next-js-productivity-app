@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { NoteWithFolder } from "@/lib/notes/types";
+import type { NoteWithFolder } from "@/lib/validation/notes";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Check, Save } from "lucide-react";

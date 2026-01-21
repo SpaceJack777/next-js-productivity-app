@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import NotesFolderList from "@/components/notes/notes-folder-list";
 import NotesList from "@/components/notes/notes-list";
-import type { NotesFolderWithChildren } from "@/lib/notes-folders/types";
-import type { NoteWithFolder } from "@/lib/notes/types";
+import type { NotesFolderWithChildren } from "@/lib/validation/notes-folders";
+import type { NoteWithFolder } from "@/lib/validation/notes";
 import NoteEditor from "./note-editor";
 
 type NotesWorkspaceProps = {

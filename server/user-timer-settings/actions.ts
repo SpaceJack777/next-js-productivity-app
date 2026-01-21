@@ -46,20 +46,20 @@ export async function updateUserSettings(
   const session = await getSession();
   if (!session?.user?.id) throw new Error("Not authenticated");
 
-  const validatedSettings = timerSettingsSchema.parse(settings);
+  const validated = timerSettingsSchema.parse(settings);
 
   await prisma.userTimerSettings.upsert({
     where: { userId: session.user.id },
     update: {
-      focusSession: validatedSettings.focusSession,
-      shortBreak: validatedSettings.shortBreak,
-      longBreak: validatedSettings.longBreak,
+      focusSession: validated.focusSession,
+      shortBreak: validated.shortBreak,
+      longBreak: validated.longBreak,
     },
     create: {
       userId: session.user.id,
-      focusSession: validatedSettings.focusSession,
-      shortBreak: validatedSettings.shortBreak,
-      longBreak: validatedSettings.longBreak,
+      focusSession: validated.focusSession,
+      shortBreak: validated.shortBreak,
+      longBreak: validated.longBreak,
     },
   });
 }

@@ -1,5 +1,5 @@
 import { prisma } from "@/prisma/prisma";
-import type { NotesFolderWithChildren } from "@/lib/notes-folders/types";
+import type { NotesFolderWithChildren } from "@/lib/validation/notes-folders";
 
 export async function getNotesFolders(userId: string) {
   const folders = await prisma.notesFolder.findMany({

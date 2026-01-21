@@ -1,19 +1,19 @@
-'use client';
+"use client";
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
-} from '@/components/ui/breadcrumb';
+} from "@/components/ui/breadcrumb";
 
-import { useSelectedLayoutSegment } from 'next/navigation';
+import { useSelectedLayoutSegment } from "next/navigation";
 
 export default function Breadcrumbs() {
   const capitalizeFirstLetter = (str: string | null) => {
-    if (!str) return '';
+    if (!str) return "";
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
   const segment = useSelectedLayoutSegment();
-  const parsedSegment = capitalizeFirstLetter(segment)?.split('-').join(' ');
+  const parsedSegment = capitalizeFirstLetter(segment)?.split("-").join(" ");
   return (
     <Breadcrumb>
       <BreadcrumbList>
