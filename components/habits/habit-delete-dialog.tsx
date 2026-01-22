@@ -2,6 +2,7 @@
 
 import { ActionDialog } from "@/components/action-dialog";
 import { deleteHabit } from "@/server/habits/actions";
+import { showToast } from "@/lib/toast";
 
 type HabitDeleteDialogProps = {
   habitId: string;
@@ -17,7 +18,13 @@ export function HabitDeleteDialog({
   onOpenChange,
 }: HabitDeleteDialogProps) {
   async function handleDelete() {
-    await deleteHabit(habitId);
+    try {
+      await deleteHabit(habitId);
+      showToast.success(`"${habitName}" deleted successfully!`);
+      onOpenChange(false);
+    } catch (error) {
+      showToast.error("Failed to delete habit");
+    }
   }
 
   return (

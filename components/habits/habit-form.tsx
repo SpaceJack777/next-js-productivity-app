@@ -4,7 +4,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import SubmitButton from "../submit-button";
 import type { Habit } from "@prisma/client";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { createHabitAction, updateHabitAction } from "@/server/habits/actions";
 import { HabitIconSelector, type HabitIconName } from "./habit-icon-selector";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { showToast } from "@/lib/toast";
+import { useRouter } from "next/navigation";
 
 type HabitFormProps = {
   habit?: Habit;
@@ -25,11 +27,31 @@ export function HabitForm({ habit, mode }: HabitFormProps) {
   const [selectedIcon, setSelectedIcon] = useState<HabitIconName>(
     (habit?.icon as HabitIconName) || "Target",
   );
+  const [, startTransition] = useTransition();
+  const router = useRouter();
 
   const isEdit = mode === "edit";
-  const action = isEdit ? updateHabitAction : createHabitAction;
   const title = isEdit ? "Edit Habit" : "Create New Habit";
   const submitText = isEdit ? "Update Habit" : "Create Habit";
+
+  const handleSubmit = async (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        if (isEdit) {
+          await updateHabitAction(formData);
+          showToast.success("Habit updated successfully!");
+        } else {
+          await createHabitAction(formData);
+          showToast.success("Habit created successfully!");
+        }
+        router.push("/habits");
+      } catch {
+        showToast.error(
+          isEdit ? "Failed to update habit" : "Failed to create habit",
+        );
+      }
+    });
+  };
 
   return (
     <Card className="max-w-2xl">
@@ -37,7 +59,7 @@ export function HabitForm({ habit, mode }: HabitFormProps) {
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form action={action} className="space-y-6">
+        <form action={handleSubmit} className="space-y-6">
           {isEdit && <input type="hidden" name="id" value={habit?.id} />}
 
           <div className="space-y-2">

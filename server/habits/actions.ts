@@ -3,7 +3,6 @@
 import { prisma } from "@/prisma/prisma";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "../server-utils";
-import { redirect } from "next/navigation";
 
 import {
   createHabitSchema,
@@ -40,7 +39,6 @@ export async function createHabitAction(formData: FormData) {
   });
 
   revalidatePath("/habits");
-  redirect("/habits");
 }
 
 export async function updateHabitAction(formData: FormData) {
@@ -80,7 +78,6 @@ export async function updateHabitAction(formData: FormData) {
   });
 
   revalidatePath("/habits");
-  redirect("/habits");
 }
 
 export async function deleteHabit(habitId: DeleteHabitInput) {
