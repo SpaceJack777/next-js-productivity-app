@@ -1,5 +1,5 @@
-import HabitsCreateForm from "@/components/habits/habits-create-form";
+import { HabitForm } from "@/components/habits/habit-form";
 
 export default function Page() {
-  return <HabitsCreateForm />;
+  return <HabitForm mode="create" />;
 }

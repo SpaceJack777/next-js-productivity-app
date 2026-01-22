@@ -5,11 +5,18 @@ import { useFormStatus } from "react-dom";
 import { Spinner } from "./ui/spinner";
 import { PropsWithChildren } from "react";
 
-export default function SubmitButton({ children }: PropsWithChildren) {
+type SubmitButtonProps = PropsWithChildren<{
+  className?: string;
+}>;
+
+export default function SubmitButton({
+  children,
+  className,
+}: SubmitButtonProps) {
   const { pending } = useFormStatus();
 
   return (
-    <Button type="submit" disabled={pending}>
+    <Button type="submit" disabled={pending} className={className}>
       {pending ? <Spinner /> : null}
       {children}
     </Button>

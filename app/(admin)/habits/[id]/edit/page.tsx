@@ -1,4 +1,4 @@
-import HabitsEditForm from "@/components/habits/habits-edit-form";
+import { HabitForm } from "@/components/habits/habit-form";
 import { getHabitById } from "@/server/habits/queries";
 import { notFound } from "next/navigation";
 
@@ -14,5 +14,5 @@ export default async function Page({ params }: PageProps) {
     notFound();
   }
 
-  return <HabitsEditForm habit={habit} />;
+  return <HabitForm mode="edit" habit={habit} />;
 }

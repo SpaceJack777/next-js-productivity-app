@@ -44,33 +44,34 @@ export type HabitIconName = (typeof habitIcons)[number]["name"];
 
 type HabitIconSelectorProps = {
   selectedIcon: HabitIconName;
-  onIconSelect: (icon: HabitIconName) => void;
+  onIconSelectAction: (icon: HabitIconName) => void;
 };
 
 export function HabitIconSelector({
   selectedIcon,
-  onIconSelect,
+  onIconSelectAction,
 }: HabitIconSelectorProps) {
   return (
-    <>
-      <label>Icon</label>
+    <div className="space-y-2">
+      <label className="text-sm font-medium leading-none">Icon</label>
       <input type="hidden" name="icon" value={selectedIcon} />
-      <div className="grid grid-cols-5 gap-2 mb-4">
+      <div className="grid grid-cols-5 gap-3">
         {habitIcons.map(({ name, icon: Icon }) => (
           <button
             key={name}
             type="button"
-            onClick={() => onIconSelect(name)}
-            className={`p-3 rounded-md border-2 flex items-center justify-center transition-colors ${
+            onClick={() => onIconSelectAction(name)}
+            className={`relative h-14 rounded-lg border-2 flex items-center justify-center transition-all hover:scale-105 ${
               selectedIcon === name
-                ? "border-primary bg-primary/10"
-                : "border-input hover:border-primary/50"
+                ? "border-primary bg-primary/10 shadow-sm ring-2 ring-primary/20"
+                : "border-input hover:border-primary/50 hover:bg-accent"
             }`}
+            aria-label={`Select ${name} icon`}
           >
-            <Icon className="w-6 h-6" />
+            <Icon className="h-6 w-6" />
           </button>
         ))}
       </div>
-    </>
+    </div>
   );
 }

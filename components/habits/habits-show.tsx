@@ -25,6 +25,14 @@ import {
 import { MoreVertical, CircleCheck, CircleMinus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import Search from "../search";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 type ShowHabitsProps = {
   habits: Habit[];
@@ -33,14 +41,25 @@ type ShowHabitsProps = {
 
 export default function ShowHabits({
   habits,
-  itemsPerPage = 10,
+  itemsPerPage: initialItemsPerPage = 10,
 }: ShowHabitsProps) {
-  const { currentPage, totalPages, paginatedItems, setCurrentPage } =
-    usePagination({
-      items: habits,
-      itemsPerPage,
-    });
+  const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
+
+  const handleItemsPerPageChange = (value: string) => {
+    const newItemsPerPage = parseInt(value);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  const { totalPages, paginatedItems } = usePagination({
+    items: habits,
+    itemsPerPage,
+    currentPage,
+    onPageChange: setCurrentPage,
+  });
 
   const getIcon = (iconName: string) => {
     const Icon = habitIconMap[iconName];
@@ -48,7 +67,9 @@ export default function ShowHabits({
   };
 
   return (
-    <div className="max-w-7xl">
+    <div className="max-w-7xl space-y-4">
+      <Search placeholder="Search habits..." />
+
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
@@ -134,11 +155,33 @@ export default function ShowHabits({
         </Table>
       </div>
 
-      <AppPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
+      <div className="pl-2 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
+          <span>Show</span>
+          <Select
+            value={itemsPerPage.toString()}
+            onValueChange={handleItemsPerPageChange}
+          >
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="30">30</SelectItem>
+              <SelectItem value="40">40</SelectItem>
+            </SelectContent>
+          </Select>
+          <span>per page</span>
+        </div>
+
+        <AppPagination
+          className="justify-end"
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChangeAction={setCurrentPage}
+        />
+      </div>
     </div>
   );
 }

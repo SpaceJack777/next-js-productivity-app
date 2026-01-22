@@ -12,13 +12,15 @@ import {
 type PaginateProps = {
   currentPage: number;
   totalPages: number;
-  onPageChange: (page: number) => void;
+  onPageChangeAction: (page: number) => void;
+  className?: string;
 };
 
 export function AppPagination({
   currentPage,
   totalPages,
-  onPageChange,
+  onPageChangeAction,
+  className,
 }: PaginateProps) {
   if (totalPages <= 1) return null;
 
@@ -26,11 +28,11 @@ export function AppPagination({
   const canGoNext = currentPage < totalPages;
 
   return (
-    <Pagination>
+    <Pagination className={className}>
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
-            onClick={() => canGoPrevious && onPageChange(currentPage - 1)}
+            onClick={() => canGoPrevious && onPageChangeAction(currentPage - 1)}
             aria-disabled={!canGoPrevious}
             className={
               canGoPrevious
@@ -43,7 +45,7 @@ export function AppPagination({
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
           <PaginationItem key={page}>
             <PaginationLink
-              onClick={() => onPageChange(page)}
+              onClick={() => onPageChangeAction(page)}
               isActive={currentPage === page}
               className="cursor-pointer"
             >
@@ -54,7 +56,7 @@ export function AppPagination({
 
         <PaginationItem>
           <PaginationNext
-            onClick={() => canGoNext && onPageChange(currentPage + 1)}
+            onClick={() => canGoNext && onPageChangeAction(currentPage + 1)}
             aria-disabled={!canGoNext}
             className={
               canGoNext ? "cursor-pointer" : "pointer-events-none opacity-50"

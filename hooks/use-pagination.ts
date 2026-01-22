@@ -3,13 +3,20 @@ import { useState, useMemo } from "react";
 type UsePaginationProps<T> = {
   items: T[];
   itemsPerPage?: number;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
 };
 
 export function usePagination<T>({
   items,
   itemsPerPage = 10,
+  currentPage: externalCurrentPage,
+  onPageChange,
 }: UsePaginationProps<T>) {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalCurrentPage, setInternalCurrentPage] = useState(1);
+
+  const currentPage = externalCurrentPage ?? internalCurrentPage;
+  const setCurrentPage = onPageChange ?? setInternalCurrentPage;
 
   const totalPages = Math.ceil(items.length / itemsPerPage);
 
