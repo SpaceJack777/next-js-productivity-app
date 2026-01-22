@@ -1,48 +1,94 @@
 "use server";
 
 import { prisma } from "@/prisma/prisma";
-import { getSession } from "@/lib/get-session";
 import { revalidatePath } from "next/cache";
+import { requireAuth } from "../server-utils";
+import { redirect } from "next/navigation";
 
 import {
   createHabitSchema,
+  updateHabitSchema,
   deleteHabitSchema,
-  type CreateHabitInput,
   type DeleteHabitInput,
+  type HabitIcon,
+  type HabitStatus,
 } from "@/lib/validation/habits";
 
-export async function createHabit(input: CreateHabitInput) {
-  const validated = createHabitSchema.parse(input);
+export async function createHabitAction(formData: FormData) {
+  const name = formData.get("name") as string;
+  const status = formData.get("status") as HabitStatus;
+  const description = formData.get("description") as string;
+  const icon = formData.get("icon") as HabitIcon;
 
-  const session = await getSession();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+  const validated = createHabitSchema.parse({
+    name,
+    description,
+    status,
+    icon,
+  });
 
-  const habit = await prisma.habit.create({
+  const userId = await requireAuth();
+
+  await prisma.habit.create({
     data: {
       name: validated.name,
       status: validated.status,
       description: validated.description,
-      userId: session.user.id,
+      icon: validated.icon,
+      userId: userId,
     },
   });
 
   revalidatePath("/habits");
+  redirect("/habits");
+}
 
-  return habit;
+export async function updateHabitAction(formData: FormData) {
+  const id = formData.get("id") as string;
+  const name = formData.get("name") as string;
+  const status = formData.get("status") as HabitStatus;
+  const description = formData.get("description") as string;
+  const icon = formData.get("icon") as HabitIcon;
+
+  const validated = updateHabitSchema.parse({
+    id,
+    name,
+    description,
+    status,
+    icon,
+  });
+
+  const userId = await requireAuth();
+
+  const habit = await prisma.habit.findFirst({
+    where: { id: validated.id, userId },
+  });
+
+  if (!habit) {
+    throw new Error("Habit not found");
+  }
+
+  await prisma.habit.update({
+    where: { id: validated.id },
+    data: {
+      name: validated.name,
+      status: validated.status,
+      description: validated.description,
+      icon: validated.icon,
+      userId: userId,
+    },
+  });
+
+  revalidatePath("/habits");
+  redirect("/habits");
 }
 
 export async function deleteHabit(habitId: DeleteHabitInput) {
   const validated = deleteHabitSchema.parse(habitId);
-
-  const session = await getSession();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+  const userId = await requireAuth();
 
   const habit = await prisma.habit.findFirst({
-    where: { id: validated, userId: session.user.id },
+    where: { id: validated, userId },
   });
 
   if (!habit) {

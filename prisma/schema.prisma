@@ -118,15 +118,21 @@ model Note {
   @@map("notes")
 }
 
+enum HabitStatus {
+  active
+  inactive
+}
+
 model Habit {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   name        String
+  icon        String      @default("Target")
   description String
-  status      String
+  status      HabitStatus @default(active)
   userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("habits")
