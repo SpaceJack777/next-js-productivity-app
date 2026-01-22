@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NotesFolderDialog } from "./notes-folder-dialog";
 import { NotesDeleteFolderDialog } from "./notes-delete-folder-dialog";
-import type { NotesFolderWithChildren } from "@/lib/notes-folders/types";
+import type { NotesFolderWithChildren } from "@/lib/validation/notes-folders";
 import * as LucideIcons from "lucide-react";
 
 type NotesFolderListProps = {

@@ -1,113 +1,65 @@
-'use client';
+"use client";
 
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination';
-
-import { useCallback, useMemo } from 'react';
+} from "@/components/ui/pagination";
 
 type PaginateProps = {
   currentPage: number;
   totalPages: number;
-  onPageChange: (page: number) => void;
+  onPageChangeAction: (page: number) => void;
+  className?: string;
 };
 
 export function AppPagination({
   currentPage,
   totalPages,
-  onPageChange,
+  onPageChangeAction,
+  className,
 }: PaginateProps) {
-  const handlePrevious = useCallback(() => {
-    if (currentPage > 1) onPageChange(currentPage - 1);
-  }, [currentPage, onPageChange]);
-
-  const handleNext = useCallback(() => {
-    if (currentPage < totalPages) onPageChange(currentPage + 1);
-  }, [currentPage, totalPages, onPageChange]);
-
-  const handlePageClick = useCallback(
-    (page: number) => {
-      onPageChange(page);
-    },
-    [onPageChange]
-  );
-
-  const pages = useMemo(() => {
-    const pages: (number | 'ellipsis')[] = [];
-    const showEllipsis = totalPages > 7;
-
-    if (!showEllipsis) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-
-    pages.push(1);
-
-    if (currentPage <= 3) {
-      pages.push(2, 3, 4);
-      pages.push('ellipsis');
-      pages.push(totalPages);
-    } else if (currentPage >= totalPages - 2) {
-      pages.push('ellipsis');
-      pages.push(totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-    } else {
-      pages.push('ellipsis');
-      pages.push(currentPage - 1, currentPage, currentPage + 1);
-      pages.push('ellipsis');
-      pages.push(totalPages);
-    }
-
-    return pages;
-  }, [currentPage, totalPages]);
-
   if (totalPages <= 1) return null;
 
+  const canGoPrevious = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
+
   return (
-    <Pagination>
+    <Pagination className={className}>
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
-            onClick={handlePrevious}
-            aria-disabled={currentPage === 1}
+            onClick={() => canGoPrevious && onPageChangeAction(currentPage - 1)}
+            aria-disabled={!canGoPrevious}
             className={
-              currentPage === 1
-                ? 'pointer-events-none opacity-50'
-                : 'cursor-pointer'
+              canGoPrevious
+                ? "cursor-pointer"
+                : "pointer-events-none opacity-50"
             }
           />
         </PaginationItem>
 
-        {pages.map((page, idx) =>
-          page === 'ellipsis' ? (
-            <PaginationItem key={`ellipsis-${idx}`}>
-              <PaginationEllipsis />
-            </PaginationItem>
-          ) : (
-            <PaginationItem key={page}>
-              <PaginationLink
-                onClick={() => handlePageClick(page)}
-                isActive={currentPage === page}
-                className="cursor-pointer"
-              >
-                {page}
-              </PaginationLink>
-            </PaginationItem>
-          )
-        )}
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <PaginationItem key={page}>
+            <PaginationLink
+              onClick={() => onPageChangeAction(page)}
+              isActive={currentPage === page}
+              className="cursor-pointer"
+            >
+              {page}
+            </PaginationLink>
+          </PaginationItem>
+        ))}
 
         <PaginationItem>
           <PaginationNext
-            onClick={handleNext}
-            aria-disabled={currentPage === totalPages}
+            onClick={() => canGoNext && onPageChangeAction(currentPage + 1)}
+            aria-disabled={!canGoNext}
             className={
-              currentPage === totalPages
-                ? 'pointer-events-none opacity-50'
-                : 'cursor-pointer'
+              canGoNext ? "cursor-pointer" : "pointer-events-none opacity-50"
             }
           />
         </PaginationItem>

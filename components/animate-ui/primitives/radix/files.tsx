@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { AnimatePresence, motion, type HTMLMotionProps } from 'motion/react';
+import * as React from "react";
+import { AnimatePresence, motion, type HTMLMotionProps } from "motion/react";
 
 import {
   Highlight,
   HighlightItem,
   type HighlightItemProps,
   type HighlightProps,
-} from '@/components/animate-ui/primitives/effects/highlight';
+} from "@/components/animate-ui/primitives/effects/highlight";
 import {
   Accordion,
   AccordionItem,
@@ -20,9 +20,9 @@ import {
   type AccordionHeaderProps,
   type AccordionTriggerProps,
   type AccordionContentProps,
-} from '@/components/animate-ui/primitives/radix/accordion';
-import { getStrictContext } from '@/lib/get-strict-context';
-import { useControlledState } from '@/hooks/use-controlled-state';
+} from "@/components/animate-ui/primitives/radix/accordion";
+import { getStrictContext } from "@/lib/get-strict-context";
+import { useControlledState } from "@/hooks/use-controlled-state";
 
 type FilesContextType = {
   open: string[];
@@ -33,14 +33,14 @@ type FolderContextType = {
 };
 
 const [FilesProvider, useFiles] =
-  getStrictContext<FilesContextType>('FilesContext');
+  getStrictContext<FilesContextType>("FilesContext");
 
 const [FolderProvider, useFolder] =
-  getStrictContext<FolderContextType>('FolderContext');
+  getStrictContext<FolderContextType>("FolderContext");
 
 type BaseFilesProps = {
   children: React.ReactNode;
-} & Omit<AccordionProps, 'type' | 'defaultValue' | 'value' | 'onValueChange'>;
+} & Omit<AccordionProps, "type" | "defaultValue" | "value" | "onValueChange">;
 
 type ControlledFilesProps = {
   defaultOpen?: never;
@@ -80,8 +80,8 @@ function Files({
         value={open}
         onValueChange={setOpenValue}
         style={{
-          position: 'relative',
-          overflow: 'auto',
+          position: "relative",
+          overflow: "auto",
           ...style,
         }}
         {...props}
@@ -92,7 +92,7 @@ function Files({
   );
 }
 
-type FilesHighlightProps = Omit<HighlightProps, 'controlledItems' | 'mode'>;
+type FilesHighlightProps = Omit<HighlightProps, "controlledItems" | "mode">;
 
 function FilesHighlight({ hover = true, ...props }: FilesHighlightProps) {
   return (
@@ -142,13 +142,13 @@ function FolderHighlight(props: FolderHighlightProps) {
   return <HighlightItem data-slot="folder-highlight" {...props} />;
 }
 
-type FolderProps = React.ComponentProps<'div'>;
+type FolderProps = React.ComponentProps<"div">;
 
 function Folder(props: FolderProps) {
   return <div data-slot="folder" {...props} />;
 }
 
-type FolderIconProps = HTMLMotionProps<'span'> & {
+type FolderIconProps = HTMLMotionProps<"span"> & {
   closeIcon: React.ReactNode;
   openIcon: React.ReactNode;
 };
@@ -164,7 +164,7 @@ function FolderIcon({
   return (
     <AnimatePresence mode="wait">
       <motion.span
-        key={isOpen ? 'open' : 'close'}
+        key={isOpen ? "open" : "close"}
         data-slot="folder-icon"
         initial={{ scale: 0.9 }}
         animate={{ scale: 1 }}
@@ -178,7 +178,7 @@ function FolderIcon({
   );
 }
 
-type FolderLabelProps = React.ComponentProps<'span'>;
+type FolderLabelProps = React.ComponentProps<"span">;
 
 function FolderLabel(props: FolderLabelProps) {
   return <span data-slot="folder-label" {...props} />;
@@ -190,19 +190,19 @@ function FileHighlight(props: FileHighlightProps) {
   return <HighlightItem data-slot="file-highlight" {...props} />;
 }
 
-type FileProps = React.ComponentProps<'div'>;
+type FileProps = React.ComponentProps<"div">;
 
 function File(props: FileProps) {
   return <div data-slot="file" {...props} />;
 }
 
-type FileIconProps = React.ComponentProps<'span'>;
+type FileIconProps = React.ComponentProps<"span">;
 
 function FileIcon(props: FileIconProps) {
   return <span data-slot="file-icon" {...props} />;
 }
 
-type FileLabelProps = React.ComponentProps<'span'>;
+type FileLabelProps = React.ComponentProps<"span">;
 
 function FileLabel(props: FileLabelProps) {
   return <span data-slot="file-label" {...props} />;

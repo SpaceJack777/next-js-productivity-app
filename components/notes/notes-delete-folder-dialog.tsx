@@ -10,7 +10,7 @@ import {
 } from "@/components/animate-ui/components/radix/dialog";
 import { Button } from "../ui/button";
 import { deleteNotesFolder } from "@/server/notes-folders/actions";
-import type { NotesFolderWithChildren } from "@/lib/notes-folders/types";
+import type { NotesFolderWithChildren } from "@/lib/validation/notes-folders";
 
 type NotesDeleteFolderDialogProps = {
   open: boolean;

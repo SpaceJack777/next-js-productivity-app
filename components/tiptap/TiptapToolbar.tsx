@@ -87,7 +87,6 @@ export default function TiptapToolbar({ editor }: TiptapToolbarProps) {
 
     if (linkUrl === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
-      setShowLinkDialog(false);
       setLinkUrl("");
       return;
     }
@@ -98,7 +97,6 @@ export default function TiptapToolbar({ editor }: TiptapToolbarProps) {
       .extendMarkRange("link")
       .setLink({ href: linkUrl })
       .run();
-    setShowLinkDialog(false);
     setLinkUrl("");
   };
 
@@ -218,7 +216,8 @@ export default function TiptapToolbar({ editor }: TiptapToolbarProps) {
         title="Insert URL"
         open={showLinkDialog}
         onOpenChange={setShowLinkDialog}
-        onSave={saveLink}
+        onConfirm={saveLink}
+        confirm="Save"
       >
         <Input
           placeholder="https://example.com"

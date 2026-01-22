@@ -1,0 +1,112 @@
+"use client";
+
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import SubmitButton from "../submit-button";
+import type { Habit } from "@prisma/client";
+import { useState, useTransition } from "react";
+import { createHabitAction, updateHabitAction } from "@/server/habits/actions";
+import { HabitIconSelector, type HabitIconName } from "./habit-icon-selector";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { showToast } from "@/lib/toast";
+import { useRouter } from "next/navigation";
+
+type HabitFormProps = {
+  habit?: Habit;
+  mode: "create" | "edit";
+};
+
+export function HabitForm({ habit, mode }: HabitFormProps) {
+  const [selectedIcon, setSelectedIcon] = useState<HabitIconName>(
+    (habit?.icon as HabitIconName) || "Target",
+  );
+  const [, startTransition] = useTransition();
+  const router = useRouter();
+
+  const isEdit = mode === "edit";
+  const title = isEdit ? "Edit Habit" : "Create New Habit";
+  const submitText = isEdit ? "Update Habit" : "Create Habit";
+
+  const handleSubmit = async (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        if (isEdit) {
+          await updateHabitAction(formData);
+          showToast.success("Habit updated successfully!");
+        } else {
+          await createHabitAction(formData);
+          showToast.success("Habit created successfully!");
+        }
+        router.push("/habits");
+      } catch {
+        showToast.error(
+          isEdit ? "Failed to update habit" : "Failed to create habit",
+        );
+      }
+    });
+  };
+
+  return (
+    <Card className="max-w-2xl">
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form action={handleSubmit} className="space-y-6">
+          {isEdit && <input type="hidden" name="id" value={habit?.id} />}
+
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              type="text"
+              name="name"
+              id="name"
+              defaultValue={habit?.name}
+              placeholder="Enter habit name"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Input
+              type="text"
+              name="description"
+              id="description"
+              defaultValue={habit?.description}
+              placeholder="Describe your habit"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select name="status" defaultValue={habit?.status || "active"}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <HabitIconSelector
+            selectedIcon={selectedIcon}
+            onIconSelectAction={setSelectedIcon}
+          />
+
+          <SubmitButton className="w-full">{submitText}</SubmitButton>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}

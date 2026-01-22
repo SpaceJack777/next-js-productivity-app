@@ -1,5 +1,5 @@
 import { prisma } from "@/prisma/prisma";
-import type { NoteWithFolder } from "@/lib/notes/types";
+import type { NoteWithFolder } from "@/lib/validation/notes";
 
 export async function getNotes(userId: string, folderId?: string) {
   const notes = await prisma.note.findMany({

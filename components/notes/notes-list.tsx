@@ -8,8 +8,8 @@ import { EmptyState } from "../ui/empty-state";
 import { Spinner } from "../ui/spinner";
 import { PlusIcon, Folder, FileX, FolderOpen } from "lucide-react";
 import { createNote } from "@/server/notes/actions";
-import type { NoteWithFolder } from "@/lib/notes/types";
-import type { NotesFolderWithChildren } from "@/lib/notes-folders/types";
+import type { NoteWithFolder } from "@/lib/validation/notes";
+import type { NotesFolderWithChildren } from "@/lib/validation/notes-folders";
 import * as LucideIcons from "lucide-react";
 
 type NotesListProps = {

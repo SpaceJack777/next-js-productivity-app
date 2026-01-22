@@ -21,6 +21,7 @@ model User {
   timerSettings UserTimerSettings?
   notesFolders  NotesFolder[]
   notes         Note[]
+  Habit         Habit[]
 
   @@map("users")
 }
@@ -70,14 +71,14 @@ model Pomodoro {
 }
 
 model UserTimerSettings {
-  id           String @id @default(cuid())
-  userId       String @unique
-  focusSession Int    @default(25)
-  shortBreak   Int    @default(5)
-  longBreak    Int    @default(15)
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  focusSession Int      @default(25)
+  shortBreak   Int      @default(5)
+  longBreak    Int      @default(15)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  user         User   @relation(fields: [userId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
 
   @@map("user_timer_settings")
 }
@@ -115,4 +116,24 @@ model Note {
   @@index([userId])
   @@index([folderId])
   @@map("notes")
+}
+
+enum HabitStatus {
+  active
+  inactive
+}
+
+model Habit {
+  id          String      @id @default(cuid())
+  name        String
+  icon        String      @default("Target")
+  description String
+  status      HabitStatus @default(active)
+  userId      String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("habits")
 }

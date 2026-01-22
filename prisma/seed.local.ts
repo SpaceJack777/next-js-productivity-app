@@ -1,49 +1,20 @@
 import { PrismaClient } from "@prisma/client";
+import { seedPomodoroSessions } from "./seeders/pomodoro-seeder";
+import { seedHabits } from "./seeders/habits-seeder";
 
 const prisma = new PrismaClient();
 
 async function main() {
   const user = await prisma.user.findUnique({
-    where: { email: "asdfasdfasdf@asdfasdf.lt" },
+    where: { email: "laurynas@space.com" },
   });
 
   if (!user) throw new Error("User not found! Create a local user first.");
 
-  // Create random Pomodoro sessions for the last 30 days
-  const sessions = [];
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  await seedPomodoroSessions(prisma, user.id);
+  await seedHabits(prisma, user.id);
 
-  // Create between 20-40 sessions randomly distributed over the last 30 days
-  const numSessions = Math.floor(Math.random() * 21) + 20; // 20-40 sessions
-
-  for (let i = 0; i < numSessions; i++) {
-    // Random date within the last 30 days
-    const randomTime =
-      thirtyDaysAgo.getTime() +
-      Math.random() * (Date.now() - thirtyDaysAgo.getTime());
-    const createdAt = new Date(randomTime);
-
-    // Random duration between 25-60 minutes (in seconds)
-    const duration = (Math.floor(Math.random() * 36) + 25) * 60;
-
-    sessions.push({
-      title: `Focus Session ${i + 1}`,
-      duration,
-      userId: user.id,
-      createdAt,
-      updatedAt: createdAt,
-    });
-  }
-
-  // Sort by creation date
-  sessions.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-
-  for (const s of sessions) {
-    await prisma.pomodoro.create({ data: s });
-  }
-
-  console.log("Seeded Pomodoro sessions for user:", user.email);
+  console.log("All seeding completed for user:", user.email);
 }
 
 main()

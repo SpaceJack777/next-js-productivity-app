@@ -22,6 +22,7 @@ import {
   Notebook,
   GalleryVerticalEnd,
   LayoutDashboard,
+  RotateCw,
 } from "lucide-react";
 
 // This is sample data.
@@ -63,6 +64,11 @@ const dataExample = {
       title: "Notes",
       url: "/notes",
       icon: Notebook,
+    },
+    {
+      title: "Habits",
+      url: "/habits",
+      icon: RotateCw,
     },
     // {
     //   title: 'Documentation',

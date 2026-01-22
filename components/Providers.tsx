@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import { PropsWithChildren } from "react";
 import { PomodoroProvider } from "@/contexts/pomodoro-context";
+import { Toaster } from "@/components/ui/sonner";
 
 export function Providers({ children }: PropsWithChildren) {
   return (
@@ -14,7 +15,10 @@ export function Providers({ children }: PropsWithChildren) {
         enableSystem
         disableTransitionOnChange
       >
-        <PomodoroProvider>{children}</PomodoroProvider>
+        <PomodoroProvider>
+          {children}
+          <Toaster />
+        </PomodoroProvider>
       </ThemeProvider>
     </SessionProvider>
   );
