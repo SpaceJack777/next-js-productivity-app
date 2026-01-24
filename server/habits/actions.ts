@@ -80,6 +80,28 @@ export async function updateHabitAction(formData: FormData) {
   revalidatePath("/habits");
 }
 
+export async function toggleHabitStatusAction(habitId: string) {
+  const userId = await requireAuth();
+
+  const habit = await prisma.habit.findFirst({
+    where: { id: habitId, userId },
+  });
+
+  if (!habit) {
+    throw new Error("Habit not found");
+  }
+
+  await prisma.habit.update({
+    where: { id: habitId },
+    data: {
+      status: habit.status === "active" ? "inactive" : "active",
+    },
+  });
+
+  revalidatePath("/habits");
+  return { success: true };
+}
+
 export async function deleteHabit(habitId: DeleteHabitInput) {
   const validated = deleteHabitSchema.parse(habitId);
   const userId = await requireAuth();
@@ -97,5 +119,92 @@ export async function deleteHabit(habitId: DeleteHabitInput) {
   });
 
   revalidatePath("/habits");
+  return { success: true };
+}
+export async function addHabitToTracker(habitId: string) {
+  const userId = await requireAuth();
+
+  const habit = await prisma.habit.findFirst({
+    where: { id: habitId, userId },
+  });
+
+  if (!habit) {
+    throw new Error("Habit not found");
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const existingCompletion = await prisma.habitCompletion.findFirst({
+    where: {
+      habitId,
+      userId,
+    },
+  });
+
+  if (!existingCompletion) {
+    await prisma.habitCompletion.create({
+      data: {
+        habitId,
+        userId,
+        date: today,
+        completed: false,
+      },
+    });
+  }
+
+  revalidatePath("/habits-tracker");
+  return { success: true };
+}
+
+export async function toggleHabitCompletion(habitId: string, date: Date) {
+  const userId = await requireAuth();
+
+  const habit = await prisma.habit.findFirst({
+    where: { id: habitId, userId },
+  });
+
+  if (!habit) {
+    throw new Error("Habit not found");
+  }
+
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const existingCompletion = await prisma.habitCompletion.findUnique({
+    where: {
+      habitId_userId_date: {
+        habitId,
+        userId,
+        date: startOfDay,
+      },
+    },
+  });
+
+  if (existingCompletion) {
+    await prisma.habitCompletion.update({
+      where: {
+        habitId_userId_date: {
+          habitId,
+          userId,
+          date: startOfDay,
+        },
+      },
+      data: {
+        completed: !existingCompletion.completed,
+      },
+    });
+  } else {
+    await prisma.habitCompletion.create({
+      data: {
+        habitId,
+        userId,
+        date: startOfDay,
+        completed: true,
+      },
+    });
+  }
+
+  revalidatePath("/habits-tracker");
   return { success: true };
 }

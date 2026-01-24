@@ -17,7 +17,7 @@ type NotesListProps = {
   selectedFolderId?: string;
   selectedFolder?: NotesFolderWithChildren | null;
   selectedNoteId?: string;
-  onNoteSelect: (noteId: string) => void;
+  onNoteSelectAction: (noteId: string) => void;
   isLoadingUrlParams?: boolean;
 };
 
@@ -26,7 +26,7 @@ export default function NotesList({
   selectedFolderId,
   selectedFolder,
   selectedNoteId,
-  onNoteSelect,
+  onNoteSelectAction,
   isLoadingUrlParams = false,
 }: NotesListProps) {
   const [noteTitle, setNoteTitle] = useState("");
@@ -85,11 +85,12 @@ export default function NotesList({
           </div>
         )}
       </CardHeader>
+
       {selectedFolderId && (
         <CardContent>
           <div className="flex gap-2 items-center w-full">
             <Input
-              placeholder="Create note"
+              placeholder="Create note..."
               value={noteTitle}
               onChange={(e) => setNoteTitle(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -129,7 +130,7 @@ export default function NotesList({
                 className={`p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors ${
                   selectedNoteId === note.id ? "bg-accent" : ""
                 }`}
-                onClick={() => onNoteSelect(note.id)}
+                onClick={() => onNoteSelectAction(note.id)}
               >
                 <h3 className="font-medium">{note.title || "*Untitled*"}</h3>
               </div>

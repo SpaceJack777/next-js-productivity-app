@@ -1,15 +1,24 @@
 import { PrismaClient } from "@prisma/client";
 import { seedPomodoroSessions } from "./seeders/pomodoro-seeder";
 import { seedHabits } from "./seeders/habits-seeder";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const user = await prisma.user.findUnique({
+  const hashedPassword = await bcrypt.hash("adminadmin", 10);
+
+  const user = await prisma.user.upsert({
     where: { email: "laurynas@space.com" },
+    update: {},
+    create: {
+      email: "laurynas@space.com",
+      name: "Laurynas",
+      password: hashedPassword,
+    },
   });
 
-  if (!user) throw new Error("User not found! Create a local user first.");
+  console.log("User created/found:", user.email);
 
   await seedPomodoroSessions(prisma, user.id);
   await seedHabits(prisma, user.id);

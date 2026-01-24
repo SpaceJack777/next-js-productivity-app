@@ -29,3 +29,15 @@ export async function getHabitById(id: string) {
     where: { id, userId },
   });
 }
+
+export async function getActiveHabits() {
+  const userId = await requireAuth();
+
+  return prisma.habit.findMany({
+    where: {
+      userId,
+      status: "active",
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}

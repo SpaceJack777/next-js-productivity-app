@@ -22,7 +22,8 @@ import {
   Notebook,
   GalleryVerticalEnd,
   LayoutDashboard,
-  RotateCw,
+  Glasses,
+  AlarmClockPlus,
 } from "lucide-react";
 
 // This is sample data.
@@ -66,9 +67,14 @@ const dataExample = {
       icon: Notebook,
     },
     {
+      title: "Habits Tracker",
+      url: "/habits-tracker",
+      icon: Glasses,
+    },
+    {
       title: "Habits",
       url: "/habits",
-      icon: RotateCw,
+      icon: AlarmClockPlus,
     },
     // {
     //   title: 'Documentation',

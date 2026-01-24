@@ -14,17 +14,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreVertical, CircleCheck, CircleMinus } from "lucide-react";
-import Link from "next/link";
-import { useState } from "react";
+import { CircleCheck, CircleMinus } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { useState, useTransition } from "react";
 import Search from "../search";
 import {
   Select,
@@ -33,6 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { toggleHabitStatusAction } from "@/server/habits/actions";
+import { useRouter } from "next/navigation";
+import { HabitActions } from "./habit-action";
 
 type ShowHabitsProps = {
   habits: Habit[];
@@ -45,6 +40,9 @@ export default function ShowHabits({
 }: ShowHabitsProps) {
   const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isPending, startTransition] = useTransition();
+  const [updatingHabitId, setUpdatingHabitId] = useState<string | null>(null);
+  const router = useRouter();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
 
@@ -61,9 +59,21 @@ export default function ShowHabits({
     onPageChange: setCurrentPage,
   });
 
+  if (!isPending && updatingHabitId) {
+    setUpdatingHabitId(null);
+  }
+
   const getIcon = (iconName: string) => {
     const Icon = habitIconMap[iconName];
     return Icon ? <Icon className="w-4 h-4" /> : null;
+  };
+
+  const handleToggleStatus = async (habitId: string) => {
+    setUpdatingHabitId(habitId);
+    startTransition(async () => {
+      await toggleHabitStatusAction(habitId);
+      router.refresh();
+    });
   };
 
   return (
@@ -96,7 +106,12 @@ export default function ShowHabits({
                       variant="outline"
                       className="text-muted-foreground px-1.5 bg-transparent"
                     >
-                      {habit.status === "active" ? (
+                      {updatingHabitId === habit.id ? (
+                        <>
+                          <Spinner className="w-4 h-4" />
+                          Saving
+                        </>
+                      ) : habit.status === "active" ? (
                         <>
                           <CircleCheck className="fill-green-600 text-white dark:text-gray-900" />
                           Active
@@ -113,26 +128,13 @@ export default function ShowHabits({
                     {habit.createdAt.toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                          <span className="sr-only">Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`habits/${habit.id}/edit`}>Edit</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onSelect={() => setDeleteDialogOpen(habit.id)}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <HabitActions
+                      deleteAction={() => setDeleteDialogOpen(habit.id)}
+                      isPending={isPending}
+                      toggleStatus={() => handleToggleStatus(habit.id)}
+                      habit={habit}
+                    />
+
                     <HabitDeleteDialog
                       habitId={habit.id}
                       habitName={habit.name}
