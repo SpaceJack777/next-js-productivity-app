@@ -1,4 +1,4 @@
-import ShowHabits from "@/components/habits/habits-show";
+import ShowHabits from "@/components/habits/habits";
 import { getHabits } from "@/server/habits/queries";
 import { Suspense } from "react";
 import { HabitsTableSkeleton } from "@/components/habits/habits-table-skeleton";

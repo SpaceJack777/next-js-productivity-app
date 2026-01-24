@@ -23,6 +23,7 @@ export function HabitsTrackerActionClient({
         <Plus className="size-3.5" />
         Add habit
       </Button>
+
       <AddHabitModal
         habits={habits}
         trackedHabitIds={trackedHabitIds}

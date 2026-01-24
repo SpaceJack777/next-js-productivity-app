@@ -5,6 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
 import { habitIconMap } from "@/components/habits/habit-icon-selector";
 import { EmptyState } from "../ui/empty-state";
+import { HabitsTrackerActions } from "./habits-tracker-actions";
+import { useState, useTransition } from "react";
+import { removeHabitFromTracker } from "@/server/habits-tracker/actions";
+import { Spinner } from "../ui/spinner";
+import { AnimatedList, AnimatedListItem } from "../ui/animated-list";
 
 type TrackedHabit = HabitsTracker & { habit: Habit };
 
@@ -13,6 +18,16 @@ type HabitsTrackerProps = {
 };
 
 export function HabitsTracker({ trackedHabits }: HabitsTrackerProps) {
+  const [isPending, startTransition] = useTransition();
+  const [loadingHabitId, setLoadingHabitId] = useState<string | null>(null);
+
+  const handleRemoveTrackedHabitAction = (habitId: string) => {
+    setLoadingHabitId(habitId);
+    startTransition(async () => {
+      await removeHabitFromTracker(habitId);
+    });
+  };
+
   const today = new Date();
   const dates = Array.from({ length: 5 }, (_, i) => {
     const date = new Date(today);
@@ -32,6 +47,7 @@ export function HabitsTracker({ trackedHabits }: HabitsTrackerProps) {
           <div className="flex items-center justify-between mb-6 pb-4">
             {dates.map((date, index) => {
               const isToday = index === 4;
+
               return (
                 <button
                   key={index}
@@ -43,35 +59,53 @@ export function HabitsTracker({ trackedHabits }: HabitsTrackerProps) {
             })}
           </div>
 
-          <div className="space-y-4">
-            {trackedHabits.length > 0 ? (
-              trackedHabits.map((trackedHabit) => {
+          {trackedHabits.length > 0 ? (
+            <AnimatedList>
+              {trackedHabits.map((trackedHabit) => {
                 const Icon = habitIconMap[trackedHabit.habit.icon];
+                const isLoading = loadingHabitId === trackedHabit.habit.id;
+
                 return (
-                  <div
+                  <AnimatedListItem
                     key={trackedHabit.id}
-                    className="flex items-center gap-4 px-4 py-2 rounded-lg bg-accent/50 transition-colors"
+                    itemKey={trackedHabit.id}
                   >
-                    <div className="p-2 rounded-lg bg-background">
-                      {Icon && <Icon className="size-5" />}
+                    <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-accent/50 transition-colors">
+                      <div className="p-2 rounded-lg bg-background">
+                        {Icon && <Icon className="size-5" />}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium">
+                          {trackedHabit.habit.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {trackedHabit.habit.description}
+                        </p>
+                      </div>
+                      {isLoading ? (
+                        <Spinner className="size-6" />
+                      ) : (
+                        <Checkbox size="lg" disabled={isLoading} />
+                      )}
+
+                      <HabitsTrackerActions
+                        trackedHabit={trackedHabit}
+                        onRemoveTrackedHabitAction={
+                          handleRemoveTrackedHabitAction
+                        }
+                        isPending={isPending}
+                      />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium">{trackedHabit.habit.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {trackedHabit.habit.description}
-                      </p>
-                    </div>
-                    <Checkbox size="lg" />
-                  </div>
+                  </AnimatedListItem>
                 );
-              })
-            ) : (
-              <EmptyState
-                title="No tracked habits found"
-                description="Add a habit to get started"
-              />
-            )}
-          </div>
+              })}
+            </AnimatedList>
+          ) : (
+            <EmptyState
+              title="No tracked habits found"
+              description="Add a habit to get started"
+            />
+          )}
         </CardContent>
       </Card>
     </>

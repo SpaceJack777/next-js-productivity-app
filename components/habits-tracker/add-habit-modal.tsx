@@ -14,7 +14,6 @@ import {
   addHabitToTracker,
   removeHabitFromTracker,
 } from "@/server/habits-tracker/actions";
-import { AnimatedList, AnimatedListItem } from "@/components/ui/animated-list";
 import { EmptyState } from "../ui/empty-state";
 
 type AddHabitModalProps = {
@@ -53,14 +52,14 @@ export function AddHabitModal({
     <Dialog open={open} onOpenChange={action}>
       <DialogContent className="max-h-[85vh] flex flex-col">
         <DialogTitle>Select Habits to Track</DialogTitle>
-        <AnimatedList className="mt-4 overflow-y-auto pr-2 space-y-2">
+        <div className="mt-4 overflow-y-auto pr-2 space-y-2">
           {habits.length > 0 ? (
             habits.map((habit) => {
               const isTracked = trackedHabitIds.includes(habit.id);
               const isLoading = loadingHabitId === habit.id && isPending;
 
               return (
-                <AnimatedListItem key={habit.id} itemKey={habit.id}>
+                <div key={habit.id}>
                   <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
                     <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted">
                       {getIcon(habit.icon)}
@@ -88,7 +87,7 @@ export function AddHabitModal({
                       {isTracked ? "Remove habit" : "Add habit"}
                     </Button>
                   </div>
-                </AnimatedListItem>
+                </div>
               );
             })
           ) : (
@@ -97,7 +96,7 @@ export function AddHabitModal({
               description="Create a habit first"
             />
           )}
-        </AnimatedList>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,10 +1,5 @@
 "use client";
 
-import type { Habit } from "@prisma/client";
-import { usePagination } from "@/hooks/use-pagination";
-import { AppPagination } from "@/components/app-pagination";
-import { HabitDeleteDialog } from "./habit-delete-dialog";
-import { habitIconMap } from "./habit-icon-selector";
 import {
   Table,
   TableBody,
@@ -13,11 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { CircleCheck, CircleMinus } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
-import { useState, useTransition } from "react";
-import Search from "../search";
 import {
   Select,
   SelectContent,
@@ -25,9 +15,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { toggleHabitStatusAction } from "@/server/habits/actions";
+
+import type { Habit } from "@prisma/client";
+import { usePagination } from "@/hooks/use-pagination";
+import { AppPagination } from "@/components/app-pagination";
+import { HabitDeleteDialog } from "./habit-delete-dialog";
+import { habitIconMap } from "./habit-icon-selector";
+
+import { CircleCheck, CircleMinus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
+import Search from "../search";
+
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { HabitActions } from "./habit-action";
+
+import { toggleHabitStatusAction } from "@/server/habits/actions";
+import { HabitActions } from "./habit-actions";
 
 type ShowHabitsProps = {
   habits: Habit[];
@@ -40,16 +44,16 @@ export default function ShowHabits({
 }: ShowHabitsProps) {
   const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isPending, startTransition] = useTransition();
-  const [updatingHabitId, setUpdatingHabitId] = useState<string | null>(null);
-  const router = useRouter();
-
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
+  const [updatingHabitId, setUpdatingHabitId] = useState<string | null>(null);
+
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const handleItemsPerPageChange = (value: string) => {
     const newItemsPerPage = parseInt(value);
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset to first page when changing items per page
+    setCurrentPage(1);
   };
 
   const { totalPages, paginatedItems } = usePagination({
@@ -87,11 +91,12 @@ export default function ShowHabits({
               <TableHead className="w-24">Icon</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead className="min-w-26">Status</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
+
           <TableBody>
             {paginatedItems.length > 0 ? (
               paginatedItems.map((habit) => (
