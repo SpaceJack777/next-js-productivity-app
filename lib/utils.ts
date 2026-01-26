@@ -41,3 +41,16 @@ export function debounce<TArgs extends unknown[], TReturn>(
     }, delay);
   };
 }
+
+export function getDayKeys(today: Date) {
+  return Array.from({ length: 5 }, (_, i) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (4 - i));
+
+    return {
+      key: date.toISOString().split("T")[0],
+      dayName: date.toLocaleDateString("en-US", { weekday: "short" }),
+      dayNumber: date.getDate(),
+    };
+  });
+}

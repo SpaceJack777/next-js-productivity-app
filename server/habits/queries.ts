@@ -38,6 +38,12 @@ export async function getActiveHabits() {
       userId,
       status: "active",
     },
+    select: {
+      id: true,
+      name: true,
+      icon: true,
+      description: true,
+    },
     orderBy: { createdAt: "desc" },
   });
 }

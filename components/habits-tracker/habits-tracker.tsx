@@ -1,42 +1,53 @@
 "use client";
 
-import type { Habit, HabitsTracker } from "@prisma/client";
+import {
+  removeHabitFromTracker,
+  toggleHabitCompletionAction,
+} from "@/server/habits-tracker/actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
 import { habitIconMap } from "@/components/habits/habit-icon-selector";
 import { EmptyState } from "../ui/empty-state";
 import { HabitsTrackerActions } from "./habits-tracker-actions";
-import { useState, useTransition } from "react";
-import { removeHabitFromTracker } from "@/server/habits-tracker/actions";
-import { Spinner } from "../ui/spinner";
+import { useState, useTransition, useEffect } from "react";
 import { AnimatedList, AnimatedListItem } from "../ui/animated-list";
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { toggleHabitCompletionAction } from "@/server/habits-tracker/actions";
-
-type TrackedHabit = HabitsTracker & { habit: Habit };
-
-type HabitsTrackerProps = {
-  trackedHabits: TrackedHabit[];
-  completionMap: Record<string, boolean>;
-  selectedDate: string;
-};
+import type { HabitsTrackerProps } from "./types";
+import { HabitsTrackerProgress } from "../ui/habits-tracker-progress";
+import { Spinner } from "../ui/spinner";
+import { useRouter } from "next/navigation";
 
 export function HabitsTracker({
   trackedHabits,
   completionMap,
   selectedDate,
+  progressByDayKey,
+  days,
 }: HabitsTrackerProps) {
-  const [isPending, startTransition] = useTransition();
   const [loadingHabitId, setLoadingHabitId] = useState<string | null>(null);
-  const pathname = usePathname();
+  const [isLoadingDate, setIsLoadingDate] = useState<string | null>(null);
+
+  const [isPending, startTransition] = useTransition();
   const [optimisticDate, setOptimisticDate] = useState(selectedDate);
+  const [optimisticCompletionMap, setOptimisticCompletionMap] =
+    useState<Record<string, boolean>>(completionMap);
+
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setOptimisticCompletionMap(completionMap);
+  }, [completionMap]);
+
+  useEffect(() => {
+    setIsLoadingDate(selectedDate);
+  }, [selectedDate]);
 
   const handleRemoveTrackedHabitAction = (habitId: string) => {
     setLoadingHabitId(habitId);
-    startTransition(async () => {
-      await removeHabitFromTracker(habitId);
+    startTransition(() => {
+      removeHabitFromTracker(habitId);
     });
   };
 
@@ -45,21 +56,23 @@ export function HabitsTracker({
     date: string,
     completed: boolean,
   ) => {
-    startTransition(async () => {
-      await toggleHabitCompletionAction(habitId, date, completed);
+    setOptimisticCompletionMap((prev) => ({
+      ...prev,
+      [habitId]: completed,
+    }));
+
+    startTransition(() => {
+      toggleHabitCompletionAction(date, { [habitId]: completed });
     });
   };
 
-  const today = new Date();
-  const dates = Array.from({ length: 5 }, (_, i) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - (4 - i));
-    return date;
-  });
+  const handleSelectDate = (dateKey: string) => {
+    setOptimisticDate(dateKey);
+    setIsLoadingDate(dateKey);
 
-  const formatDate = (date: Date, isToday: boolean) => {
-    if (isToday) return "Today";
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    startTransition(() => {
+      router.push(`${pathname}?date=${dateKey}`);
+    });
   };
 
   return (
@@ -67,23 +80,34 @@ export function HabitsTracker({
       <Card>
         <CardContent>
           <div className="flex items-center justify-between mb-6 pb-4">
-            {dates.map((date, index) => {
-              const isToday = index === 4;
-              const dateKey = date.toISOString().split("T")[0];
-
+            {days.map((date) => {
               return (
-                <Link
-                  key={dateKey}
-                  href={`${pathname}?date=${dateKey}`}
-                  scroll={false}
-                  onClick={() => setOptimisticDate(dateKey)}
+                <button
+                  key={date.key}
+                  type="button"
+                  onClick={() => handleSelectDate(date.key)}
                   className={cn(
-                    "px-4 py-2 rounded-lg hover:bg-accent transition-colors",
-                    optimisticDate === dateKey && "bg-accent",
+                    "relative px-4 py-2 rounded-lg hover:bg-accent transition-colors",
+                    optimisticDate === date.key && "bg-accent",
                   )}
                 >
-                  {formatDate(date, isToday)}
-                </Link>
+                  <span className="text-sm text-muted-foreground text-center">
+                    {date.dayName}
+                  </span>
+                  <div className="text-center font-medium">
+                    {date.dayNumber}
+                  </div>
+
+                  {isPending && isLoadingDate === date.key && (
+                    <Spinner className="absolute top-1 right-1 size-3" />
+                  )}
+
+                  <HabitsTrackerProgress
+                    progress={progressByDayKey[date.key] ?? 0}
+                    className="size-4 mt-1 mb-1 mx-auto"
+                    circleColor="text-blue-500"
+                  />
+                </button>
               );
             })}
           </div>
@@ -92,14 +116,20 @@ export function HabitsTracker({
             <AnimatedList>
               {trackedHabits.map((trackedHabit) => {
                 const Icon = habitIconMap[trackedHabit.habit.icon];
-                const isLoading = loadingHabitId === trackedHabit.habit.id;
+                const isLoading =
+                  loadingHabitId === trackedHabit.habit.id && isPending;
 
                 return (
                   <AnimatedListItem
                     key={trackedHabit.id}
                     itemKey={trackedHabit.id}
                   >
-                    <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-accent/50 transition-colors">
+                    <div
+                      className={cn(
+                        "flex items-center gap-4 px-4 py-2 rounded-lg bg-accent/50 transition-colors",
+                        isLoading && "opacity-50",
+                      )}
+                    >
                       <div className="p-2 rounded-lg bg-background">
                         {Icon && <Icon className="size-5" />}
                       </div>
@@ -111,24 +141,22 @@ export function HabitsTracker({
                           {trackedHabit.habit.description}
                         </p>
                       </div>
-                      {isLoading ? (
-                        <Spinner className="size-6" />
-                      ) : (
-                        <Checkbox
-                          size="lg"
-                          checked={
-                            completionMap[trackedHabit.habit.id] ?? false
-                          }
-                          disabled={isLoading}
-                          onClick={() =>
-                            handleToggleHabitCompletionAction(
-                              trackedHabit.habit.id,
-                              selectedDate,
-                              !(completionMap[trackedHabit.habit.id] ?? false),
-                            )
-                          }
-                        />
-                      )}
+                      <Checkbox
+                        size="lg"
+                        checked={
+                          optimisticCompletionMap[trackedHabit.habit.id] ??
+                          false
+                        }
+                        disabled={isLoading}
+                        onCheckedChange={(checked) =>
+                          handleToggleHabitCompletionAction(
+                            trackedHabit.habit.id,
+                            selectedDate,
+                            Boolean(checked),
+                          )
+                        }
+                      />
+
                       <HabitsTrackerActions
                         trackedHabit={trackedHabit}
                         onRemoveTrackedHabitAction={

@@ -1,15 +1,10 @@
 "use client";
 
-import type { Habit } from "@prisma/client";
-import { useState } from "react";
-import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddHabitModal } from "./add-habit-modal";
-
-type HabitsTrackerActionClientProps = {
-  habits: Habit[];
-  trackedHabitIds: string[];
-};
+import { Plus } from "lucide-react";
+import { useState } from "react";
+import type { HabitsTrackerActionClientProps } from "./types";
 
 export function HabitsTrackerActionClient({
   habits,

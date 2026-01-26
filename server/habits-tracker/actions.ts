@@ -2,13 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/prisma/prisma";
-import { requireAuth } from "@/server/server-utils";
+import { requireAuth, dayKeyToUTCDate } from "@/server/server-utils";
 
 const revalidate = () => revalidatePath("/habits-tracker", "page");
-
-function dayKeyToUTCDate(dayKey: string) {
-  return new Date(`${dayKey}T00:00:00.000Z`);
-}
 
 export async function addHabitToTracker(habitId: string) {
   const userId = await requireAuth();
@@ -24,18 +20,24 @@ export async function addHabitToTracker(habitId: string) {
 }
 
 export async function toggleHabitCompletionAction(
-  habitId: string,
-  dataKey: string,
-  completed: boolean,
+  dateKey: string,
+  updates: Record<string, boolean>, // habitId -> completed
 ) {
   const userId = await requireAuth();
-  const date = dayKeyToUTCDate(dataKey);
+  const date = dayKeyToUTCDate(dateKey);
 
-  await prisma.habitCompletion.upsert({
-    where: { habitId_userId_date: { habitId, userId, date } },
-    update: { completed },
-    create: { habitId, userId, date, completed },
-  });
+  const entries = Object.entries(updates);
+  if (entries.length === 0) return;
+
+  await prisma.$transaction(
+    entries.map(([habitId, completed]) =>
+      prisma.habitCompletion.upsert({
+        where: { habitId_userId_date: { habitId, userId, date } },
+        update: { completed },
+        create: { habitId, userId, date, completed },
+      }),
+    ),
+  );
 
   revalidate();
 }

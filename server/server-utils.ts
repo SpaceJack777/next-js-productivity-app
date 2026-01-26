@@ -7,3 +7,7 @@ export async function requireAuth() {
   }
   return session.user.id;
 }
+
+export function dayKeyToUTCDate(dayKey: string) {
+  return new Date(`${dayKey}T00:00:00.000Z`);
+}

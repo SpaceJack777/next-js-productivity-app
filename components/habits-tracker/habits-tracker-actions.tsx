@@ -1,14 +1,8 @@
 "use client";
 
-import type { Habit, HabitsTracker } from "@prisma/client";
 import { AppActions } from "../app-actions";
 import { Trash2 } from "lucide-react";
-
-type HabitsTrackerActionsProps = {
-  trackedHabit: HabitsTracker & { habit: Habit };
-  onRemoveTrackedHabitAction: (habitId: string) => void;
-  isPending: boolean;
-};
+import type { HabitsTrackerActionsProps } from "./types";
 
 export function HabitsTrackerActions({
   trackedHabit,

@@ -1,27 +1,21 @@
 "use client";
 
-import type { Habit } from "@prisma/client";
-import { Plus, X, Loader2 } from "lucide-react";
-import { useState, useTransition } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from "@/components/animate-ui/components/radix/dialog";
-import { habitIconMap } from "@/components/habits/habit-icon-selector";
 import {
   addHabitToTracker,
   removeHabitFromTracker,
 } from "@/server/habits-tracker/actions";
-import { EmptyState } from "../ui/empty-state";
 
-type AddHabitModalProps = {
-  habits: Habit[];
-  trackedHabitIds: string[];
-  open: boolean;
-  action: (open: boolean) => void;
-};
+import { Button } from "@/components/ui/button";
+import { habitIconMap } from "@/components/habits/habit-icon-selector";
+import { EmptyState } from "../ui/empty-state";
+import { Plus, X, Loader2 } from "lucide-react";
+import { useState, useTransition } from "react";
+import type { AddHabitModalProps } from "./types";
 
 export function AddHabitModal({
   habits,
@@ -34,11 +28,11 @@ export function AddHabitModal({
 
   const handleToggleHabit = (habitId: string, isTracked: boolean) => {
     setLoadingHabitId(habitId);
-    startTransition(async () => {
+    startTransition(() => {
       if (isTracked) {
-        await removeHabitFromTracker(habitId);
+        removeHabitFromTracker(habitId);
       } else {
-        await addHabitToTracker(habitId);
+        addHabitToTracker(habitId);
       }
     });
   };
