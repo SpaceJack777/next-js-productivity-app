@@ -45,7 +45,7 @@ export function AddHabitModal({
 
   const getIcon = (iconName: string) => {
     const Icon = habitIconMap[iconName];
-    return Icon ? <Icon className="w-5 h-5" /> : null;
+    return Icon ? <Icon className="size-5" /> : null;
   };
 
   return (

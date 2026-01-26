@@ -13,6 +13,8 @@ import {
   type HabitStatus,
 } from "@/lib/validation/habits";
 
+const revalidate = () => revalidatePath("/habits");
+
 export async function createHabitAction(formData: FormData) {
   const name = formData.get("name") as string;
   const status = formData.get("status") as HabitStatus;
@@ -38,7 +40,7 @@ export async function createHabitAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/habits");
+  revalidate();
 }
 
 export async function updateHabitAction(formData: FormData) {
@@ -77,7 +79,7 @@ export async function updateHabitAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/habits");
+  revalidate();
 }
 
 export async function toggleHabitStatusAction(habitId: string) {
@@ -98,7 +100,7 @@ export async function toggleHabitStatusAction(habitId: string) {
     },
   });
 
-  revalidatePath("/habits");
+  revalidate();
   return { success: true };
 }
 
@@ -118,7 +120,7 @@ export async function deleteHabit(habitId: DeleteHabitInput) {
     where: { id: validated },
   });
 
-  revalidatePath("/habits");
+  revalidate();
   return { success: true };
 }
 export async function addHabitToTracker(habitId: string) {
@@ -153,7 +155,7 @@ export async function addHabitToTracker(habitId: string) {
     });
   }
 
-  revalidatePath("/habits-tracker");
+  revalidate();
   return { success: true };
 }
 
@@ -205,6 +207,6 @@ export async function toggleHabitCompletion(habitId: string, date: Date) {
     });
   }
 
-  revalidatePath("/habits-tracker");
+  revalidate();
   return { success: true };
 }

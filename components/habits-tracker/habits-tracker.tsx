@@ -10,21 +10,43 @@ import { useState, useTransition } from "react";
 import { removeHabitFromTracker } from "@/server/habits-tracker/actions";
 import { Spinner } from "../ui/spinner";
 import { AnimatedList, AnimatedListItem } from "../ui/animated-list";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { toggleHabitCompletionAction } from "@/server/habits-tracker/actions";
 
 type TrackedHabit = HabitsTracker & { habit: Habit };
 
 type HabitsTrackerProps = {
   trackedHabits: TrackedHabit[];
+  completionMap: Record<string, boolean>;
+  selectedDate: string;
 };
 
-export function HabitsTracker({ trackedHabits }: HabitsTrackerProps) {
+export function HabitsTracker({
+  trackedHabits,
+  completionMap,
+  selectedDate,
+}: HabitsTrackerProps) {
   const [isPending, startTransition] = useTransition();
   const [loadingHabitId, setLoadingHabitId] = useState<string | null>(null);
+  const pathname = usePathname();
+  const [optimisticDate, setOptimisticDate] = useState(selectedDate);
 
   const handleRemoveTrackedHabitAction = (habitId: string) => {
     setLoadingHabitId(habitId);
     startTransition(async () => {
       await removeHabitFromTracker(habitId);
+    });
+  };
+
+  const handleToggleHabitCompletionAction = (
+    habitId: string,
+    date: string,
+    completed: boolean,
+  ) => {
+    startTransition(async () => {
+      await toggleHabitCompletionAction(habitId, date, completed);
     });
   };
 
@@ -47,14 +69,21 @@ export function HabitsTracker({ trackedHabits }: HabitsTrackerProps) {
           <div className="flex items-center justify-between mb-6 pb-4">
             {dates.map((date, index) => {
               const isToday = index === 4;
+              const dateKey = date.toISOString().split("T")[0];
 
               return (
-                <button
-                  key={index}
-                  className="px-4 py-2 rounded-lg hover:bg-accent transition-colors"
+                <Link
+                  key={dateKey}
+                  href={`${pathname}?date=${dateKey}`}
+                  scroll={false}
+                  onClick={() => setOptimisticDate(dateKey)}
+                  className={cn(
+                    "px-4 py-2 rounded-lg hover:bg-accent transition-colors",
+                    optimisticDate === dateKey && "bg-accent",
+                  )}
                 >
                   {formatDate(date, isToday)}
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -85,9 +114,21 @@ export function HabitsTracker({ trackedHabits }: HabitsTrackerProps) {
                       {isLoading ? (
                         <Spinner className="size-6" />
                       ) : (
-                        <Checkbox size="lg" disabled={isLoading} />
+                        <Checkbox
+                          size="lg"
+                          checked={
+                            completionMap[trackedHabit.habit.id] ?? false
+                          }
+                          disabled={isLoading}
+                          onClick={() =>
+                            handleToggleHabitCompletionAction(
+                              trackedHabit.habit.id,
+                              selectedDate,
+                              !(completionMap[trackedHabit.habit.id] ?? false),
+                            )
+                          }
+                        />
                       )}
-
                       <HabitsTrackerActions
                         trackedHabit={trackedHabit}
                         onRemoveTrackedHabitAction={
