@@ -600,10 +600,30 @@ function SidebarMenuButton({
   }
 
   return (
-    <Tooltip side="right" align="center">
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
-      <TooltipContent hidden={state !== "collapsed" || isMobile} {...tooltip} />
-    </Tooltip>
+    <HighlightItem
+      activeClassName={sidebarMenuButtonActiveVariants({ variant })}
+    >
+      <Tooltip side="right" align="center">
+        <TooltipTrigger asChild>
+          <Comp
+            data-slot="sidebar-menu-button"
+            data-sidebar="menu-button"
+            data-size={size}
+            data-active={isActive}
+            className={cn(
+              sidebarMenuButtonVariants({ variant, size }),
+              className,
+            )}
+            {...props}
+          />
+        </TooltipTrigger>
+
+        <TooltipContent
+          hidden={state !== "collapsed" || isMobile}
+          {...tooltip}
+        />
+      </Tooltip>
+    </HighlightItem>
   );
 }
 
