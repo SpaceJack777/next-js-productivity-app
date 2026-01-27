@@ -13,7 +13,7 @@ import {
 
 type ActionDialogProps = {
   open: boolean;
-  onOpenChangeAction: () => void;
+  onOpenChangeAction: (open: boolean) => void;
   onConfirmAction: () => void | Promise<void>;
   title?: string;
   description?: string;
@@ -41,7 +41,7 @@ export function ActionDialog({
     setIsLoading(true);
     try {
       await onConfirmAction();
-      onOpenChangeAction();
+      onOpenChangeAction(false);
     } catch (error) {
       console.error("Action failed:", error);
     } finally {
@@ -60,7 +60,7 @@ export function ActionDialog({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => onOpenChangeAction()}
+            onClick={() => onOpenChangeAction(false)}
             disabled={isLoading}
           >
             {cancel}
