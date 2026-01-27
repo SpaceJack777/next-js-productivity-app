@@ -180,7 +180,6 @@ export function HabitsTracker({
                       }
                       isPending={isPending}
                     />
-
                     <HabitsTrackerDeleteDialog
                       habitName={trackedHabit.habit.name}
                       open={deleteDialogOpen === trackedHabit.habit.id}
