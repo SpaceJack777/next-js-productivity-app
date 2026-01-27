@@ -37,6 +37,7 @@ export function ActionDialog({
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleConfirm() {
+    if (isLoading) return;
     setIsLoading(true);
     try {
       await onConfirmAction();
@@ -50,7 +51,7 @@ export function ActionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChangeAction}>
-      <DialogContent onEnter={() => handleConfirm()}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}

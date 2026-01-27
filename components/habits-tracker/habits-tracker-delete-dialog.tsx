@@ -3,10 +3,9 @@
 import { ActionDialog } from "@/components/action-dialog";
 
 type HabitsTrackerDeleteDialogProps = {
-  habitId: string;
   habitName: string;
   open: boolean;
-  onOpenChangeAction: () => void;
+  onOpenChangeAction: (open: boolean) => void;
   onConfirm: () => void | Promise<void>;
 };
 
