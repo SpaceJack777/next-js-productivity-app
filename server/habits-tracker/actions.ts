@@ -45,12 +45,21 @@ export async function toggleHabitCompletionAction(
 export async function removeHabitFromTracker(habitId: string) {
   const userId = await requireAuth();
 
-  await prisma.habitsTracker.deleteMany({
-    where: {
-      habitId,
-      userId,
-    },
-  });
+  await prisma.$transaction([
+    prisma.habitCompletion.deleteMany({
+      where: {
+        habitId,
+        userId,
+      },
+    }),
+
+    prisma.habitsTracker.deleteMany({
+      where: {
+        habitId,
+        userId,
+      },
+    }),
+  ]);
 
   revalidate();
 }

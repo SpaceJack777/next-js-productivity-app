@@ -7,6 +7,7 @@ interface CircularProgressProps {
   className?: string;
   circleColor?: string;
   children?: React.ReactNode;
+  size?: number;
 }
 
 export function CircularProgress({
@@ -14,8 +15,8 @@ export function CircularProgress({
   className = "",
   circleColor = "",
   children,
+  size = 320,
 }: CircularProgressProps) {
-  const size = 320;
   const strokeWidth = 3;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;

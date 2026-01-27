@@ -144,8 +144,10 @@ export default function ShowHabits({
                       habitId={habit.id}
                       habitName={habit.name}
                       open={deleteDialogOpen === habit.id}
-                      onOpenChange={(open) =>
-                        setDeleteDialogOpen(open ? habit.id : null)
+                      onOpenChangeAction={() =>
+                        setDeleteDialogOpen(
+                          deleteDialogOpen === habit.id ? null : habit.id,
+                        )
                       }
                     />
                   </TableCell>

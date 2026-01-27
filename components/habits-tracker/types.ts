@@ -32,8 +32,7 @@ export type HabitsTrackerProps = {
 };
 
 export type HabitsTrackerActionsProps = {
-  trackedHabit: TrackedHabit;
-  onRemoveTrackedHabitAction: (habitId: string) => void;
+  onDeleteAction: () => void;
   isPending: boolean;
 };
 

@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  removeHabitFromTracker,
-  toggleHabitCompletionAction,
-} from "@/server/habits-tracker/actions";
+import { toggleHabitCompletionAction } from "@/server/habits-tracker/actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
 import { habitIconMap } from "@/components/habits/habit-icon-selector";
@@ -14,9 +11,10 @@ import { AnimatedList, AnimatedListItem } from "../ui/animated-list";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { HabitsTrackerProps } from "./types";
-import { HabitsTrackerProgress } from "../ui/habits-tracker-progress";
 import { Spinner } from "../ui/spinner";
 import { useRouter } from "next/navigation";
+import { CircularProgress } from "../ui/circular-progress";
+import { HabitsTrackerDeleteDialog } from "./habits-tracker-delete-dialog";
 
 export function HabitsTracker({
   trackedHabits,
@@ -27,6 +25,7 @@ export function HabitsTracker({
 }: HabitsTrackerProps) {
   const [loadingHabitId, setLoadingHabitId] = useState<string | null>(null);
   const [isLoadingDate, setIsLoadingDate] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
 
   const [isPending, startTransition] = useTransition();
   const [optimisticDate, setOptimisticDate] = useState(selectedDate);
@@ -44,13 +43,6 @@ export function HabitsTracker({
     setIsLoadingDate(selectedDate);
   }, [selectedDate]);
 
-  const handleRemoveTrackedHabitAction = (habitId: string) => {
-    setLoadingHabitId(habitId);
-    startTransition(() => {
-      removeHabitFromTracker(habitId);
-    });
-  };
-
   const handleToggleHabitCompletionAction = (
     habitId: string,
     date: string,
@@ -67,6 +59,8 @@ export function HabitsTracker({
   };
 
   const handleSelectDate = (dateKey: string) => {
+    if (dateKey === optimisticDate) return;
+
     setOptimisticDate(dateKey);
     setIsLoadingDate(dateKey);
 
@@ -102,8 +96,9 @@ export function HabitsTracker({
                     <Spinner className="absolute top-1 right-1 size-3" />
                   )}
 
-                  <HabitsTrackerProgress
+                  <CircularProgress
                     progress={progressByDayKey[date.key] ?? 0}
+                    size={24}
                     className="size-4 mt-1 mb-1 mx-auto"
                     circleColor="text-blue-500"
                   />
@@ -141,6 +136,7 @@ export function HabitsTracker({
                           {trackedHabit.habit.description}
                         </p>
                       </div>
+
                       <Checkbox
                         size="lg"
                         checked={
@@ -158,11 +154,17 @@ export function HabitsTracker({
                       />
 
                       <HabitsTrackerActions
-                        trackedHabit={trackedHabit}
-                        onRemoveTrackedHabitAction={
-                          handleRemoveTrackedHabitAction
+                        onDeleteAction={() =>
+                          setDeleteDialogOpen(trackedHabit.habit.id)
                         }
                         isPending={isPending}
+                      />
+                      <HabitsTrackerDeleteDialog
+                        habitId={trackedHabit.habit.id}
+                        habitName={trackedHabit.habit.name}
+                        open={deleteDialogOpen === trackedHabit.habit.id}
+                        onOpenChangeAction={() => setDeleteDialogOpen(null)}
+                        setLoadingHabitIdAction={setLoadingHabitId}
                       />
                     </div>
                   </AnimatedListItem>
