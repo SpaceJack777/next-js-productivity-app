@@ -9,8 +9,9 @@ import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
 import { habitIconMap } from "@/components/habits/habit-icon-selector";
 import { EmptyState } from "../ui/empty-state";
 import { HabitsTrackerActions } from "./habits-tracker-actions";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { AnimatedList, AnimatedListItem } from "../ui/animated-list";
+import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { HabitsTrackerProps } from "./types";
 import { CircularProgress } from "../ui/circular-progress";
@@ -31,7 +32,14 @@ export function HabitsTracker({
   const [optimisticCompletionsByDate, setOptimisticCompletionsByDate] =
     useState(completionsByDate);
 
+  const router = useRouter();
+  const pathname = usePathname();
+
   const completionMap = optimisticCompletionsByDate[activeDate] || {};
+
+  useEffect(() => {
+    setActiveDate(initialDate);
+  }, [initialDate]);
 
   const handleToggleHabitCompletionAction = (
     habitId: string,
@@ -53,6 +61,7 @@ export function HabitsTracker({
 
   const handleSelectDate = (dateKey: string) => {
     setActiveDate(dateKey);
+    router.replace(`${pathname}?date=${dateKey}`, { scroll: false });
   };
 
   const handleDeleteHabit = (habitId: string, habitName: string) => {
