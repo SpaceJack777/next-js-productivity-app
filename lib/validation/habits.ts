@@ -1,16 +1,16 @@
 import { z } from "zod";
 
 export const habitIconSchema = z.enum([
-  "Target",
-  "Flame",
   "Dumbbell",
-  "BookOpen",
-  "Coffee",
-  "Moon",
   "Heart",
-  "Zap",
-  "Trophy",
-  "Star",
+  "Glasses",
+  "Sword",
+  "Disc3",
+  "Pill",
+  "PawPrint",
+  "HouseHeart",
+  "Phone",
+  "SquareTerminal",
 ]);
 
 export const habitStatusSchema = z.enum(["active", "inactive"]);
@@ -19,7 +19,7 @@ export const createHabitSchema = z.object({
   name: z.string().min(1).max(200),
   status: habitStatusSchema.default("active"),
   description: z.string(),
-  icon: habitIconSchema.default("Target"),
+  icon: habitIconSchema.default("Heart"),
 });
 
 export const updateHabitSchema = z.object({
@@ -27,7 +27,7 @@ export const updateHabitSchema = z.object({
   name: z.string().min(1).max(200),
   status: habitStatusSchema,
   description: z.string().min(1).max(500),
-  icon: habitIconSchema.default("Target"),
+  icon: habitIconSchema.default("Heart"),
 });
 
 export const deleteHabitSchema = z.string().min(1);
