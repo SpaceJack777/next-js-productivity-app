@@ -22,22 +22,27 @@ export default async function HabitsTrackerPage({
 
   const selectedDate = date ?? todayKey;
 
-  const [trackedHabits, completions] = await Promise.all([
-    getTrackedHabits(),
-    getHabitCompletionsForDate(selectedDate),
+  const trackedHabits = await getTrackedHabits();
+  const totalHabits = trackedHabits.length;
+
+  const [allCompletions, progressByDayKey] = await Promise.all([
+    Promise.all(dayKeys.map((key) => getHabitCompletionsForDate(key))),
+    getProgressByDayKey(dayKeys, totalHabits),
   ]);
 
-  const totalHabits = trackedHabits.length;
-  const progressByDayKey = await getProgressByDayKey(dayKeys, totalHabits);
-
-  const completionMap = Object.fromEntries(
-    completions.map((c) => [c.habitId, c.completed]),
+  const completionsByDate = Object.fromEntries(
+    dayKeys.map((key, index) => [
+      key,
+      Object.fromEntries(
+        allCompletions[index].map((c) => [c.habitId, c.completed]),
+      ),
+    ]),
   );
 
   return (
     <HabitsTracker
       trackedHabits={trackedHabits}
-      completionMap={completionMap}
+      completionsByDate={completionsByDate}
       selectedDate={selectedDate}
       progressByDayKey={progressByDayKey}
       days={days}

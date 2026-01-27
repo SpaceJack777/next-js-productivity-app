@@ -9,59 +9,41 @@ import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
 import { habitIconMap } from "@/components/habits/habit-icon-selector";
 import { EmptyState } from "../ui/empty-state";
 import { HabitsTrackerActions } from "./habits-tracker-actions";
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { AnimatedList, AnimatedListItem } from "../ui/animated-list";
-import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { HabitsTrackerProps } from "./types";
-import { Spinner } from "../ui/spinner";
 import { CircularProgress } from "../ui/circular-progress";
 import { HabitsTrackerDeleteDialog } from "./habits-tracker-delete-dialog";
 import { showToast } from "@/lib/toast";
 
 export function HabitsTracker({
   trackedHabits,
-  completionMap,
-  selectedDate,
+  completionsByDate,
+  selectedDate: initialDate,
   progressByDayKey,
   days,
 }: HabitsTrackerProps) {
   const [loadingHabitId, setLoadingHabitId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
-
-  const [pendingDate, setPendingDate] = useState<string | null>(null);
-
   const [isPending, startTransition] = useTransition();
-  const [optimisticDate, setOptimisticDate] = useState(selectedDate);
-  const [optimisticCompletionMap, setOptimisticCompletionMap] =
-    useState<Record<string, boolean>>(completionMap);
+  const [activeDate, setActiveDate] = useState(initialDate);
+  const [optimisticCompletionsByDate, setOptimisticCompletionsByDate] =
+    useState(completionsByDate);
 
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    setOptimisticCompletionMap(completionMap);
-  }, [completionMap]);
-
-  useEffect(() => {
-    setOptimisticDate(selectedDate);
-    setPendingDate(null);
-  }, [selectedDate]);
-
-  useEffect(() => {
-    for (const d of days) {
-      router.prefetch(`${pathname}?date=${d.key}`);
-    }
-  }, [days, pathname, router]);
+  const completionMap = optimisticCompletionsByDate[activeDate] || {};
 
   const handleToggleHabitCompletionAction = (
     habitId: string,
     date: string,
     completed: boolean,
   ) => {
-    setOptimisticCompletionMap((prev) => ({
+    setOptimisticCompletionsByDate((prev) => ({
       ...prev,
-      [habitId]: completed,
+      [date]: {
+        ...prev[date],
+        [habitId]: completed,
+      },
     }));
 
     startTransition(() => {
@@ -70,14 +52,7 @@ export function HabitsTracker({
   };
 
   const handleSelectDate = (dateKey: string) => {
-    if (dateKey === optimisticDate) return;
-
-    setOptimisticDate(dateKey);
-    setPendingDate(dateKey);
-
-    startTransition(() => {
-      router.replace(`${pathname}?date=${dateKey}`, { scroll: false });
-    });
+    setActiveDate(dateKey);
   };
 
   const handleDeleteHabit = (habitId: string, habitName: string) => {
@@ -101,14 +76,13 @@ export function HabitsTracker({
       <CardContent>
         <div className="flex items-center justify-between mb-6 pb-4">
           {days.map((date) => {
-            const isActive = optimisticDate === date.key;
+            const isActive = activeDate === date.key;
 
             return (
               <button
                 key={date.key}
                 type="button"
                 onClick={() => handleSelectDate(date.key)}
-                disabled={isActive}
                 aria-current={isActive ? "date" : undefined}
                 className={cn(
                   "relative px-4 py-2 rounded-lg transition-colors",
@@ -121,10 +95,6 @@ export function HabitsTracker({
                   {date.dayName}
                 </span>
                 <div className="text-center font-medium">{date.dayNumber}</div>
-
-                {pendingDate === date.key && (
-                  <Spinner className="absolute top-1 right-1 size-3" />
-                )}
 
                 <CircularProgress
                   progress={progressByDayKey[date.key] ?? 0}
@@ -167,14 +137,12 @@ export function HabitsTracker({
 
                     <Checkbox
                       size="lg"
-                      checked={
-                        optimisticCompletionMap[trackedHabit.habit.id] ?? false
-                      }
+                      checked={completionMap[trackedHabit.habit.id] ?? false}
                       disabled={isLoading}
                       onCheckedChange={(checked) =>
                         handleToggleHabitCompletionAction(
                           trackedHabit.habit.id,
-                          selectedDate,
+                          activeDate,
                           Boolean(checked),
                         )
                       }
