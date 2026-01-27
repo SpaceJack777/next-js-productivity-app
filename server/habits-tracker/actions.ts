@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/prisma/prisma";
 import { requireAuth, dayKeyToUTCDate } from "@/server/server-utils";
 
-const revalidate = () => revalidatePath("/habits-tracker", "page");
+const revalidate = () => revalidatePath("/habits-tracker");
 
 export async function addHabitToTracker(habitId: string) {
   const userId = await requireAuth();

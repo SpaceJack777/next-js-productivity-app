@@ -21,14 +21,11 @@ import { usePagination } from "@/hooks/use-pagination";
 import { AppPagination } from "@/components/app-pagination";
 import { HabitDeleteDialog } from "./habit-delete-dialog";
 import { habitIconMap } from "./habit-icon-selector";
-
 import { CircleCheck, CircleMinus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import Search from "../search";
-
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import Search from "../search";
 
 import { toggleHabitStatusAction } from "@/server/habits/actions";
 import { HabitActions } from "./habit-actions";
@@ -48,7 +45,6 @@ export default function ShowHabits({
   const [updatingHabitId, setUpdatingHabitId] = useState<string | null>(null);
 
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
 
   const handleItemsPerPageChange = (value: string) => {
     const newItemsPerPage = parseInt(value);
@@ -76,7 +72,6 @@ export default function ShowHabits({
     setUpdatingHabitId(habitId);
     startTransition(async () => {
       await toggleHabitStatusAction(habitId);
-      router.refresh();
     });
   };
 
