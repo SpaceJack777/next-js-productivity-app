@@ -81,7 +81,6 @@ export function HabitsTracker({
         await removeHabitFromTracker(habitId);
         showToast.success(`"${habitName}" was removed successfully!`);
         setDeleteDialogOpen(null);
-        router.refresh();
       } catch (error) {
         showToast.error("Failed to remove habit from tracker: " + error);
       } finally {
