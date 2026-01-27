@@ -27,8 +27,9 @@ export function HabitsTracker({
   days,
 }: HabitsTrackerProps) {
   const [loadingHabitId, setLoadingHabitId] = useState<string | null>(null);
-  const [isLoadingDate, setIsLoadingDate] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
+
+  const [pendingDate, setPendingDate] = useState<string | null>(null);
 
   const [isPending, startTransition] = useTransition();
   const [optimisticDate, setOptimisticDate] = useState(selectedDate);
@@ -43,9 +44,15 @@ export function HabitsTracker({
   }, [completionMap]);
 
   useEffect(() => {
-    setIsLoadingDate(selectedDate);
     setOptimisticDate(selectedDate);
+    setPendingDate(null);
   }, [selectedDate]);
+
+  useEffect(() => {
+    for (const d of days) {
+      router.prefetch(`${pathname}?date=${d.key}`);
+    }
+  }, [days, pathname, router]);
 
   const handleToggleHabitCompletionAction = (
     habitId: string,
@@ -66,10 +73,10 @@ export function HabitsTracker({
     if (dateKey === optimisticDate) return;
 
     setOptimisticDate(dateKey);
-    setIsLoadingDate(dateKey);
+    setPendingDate(dateKey);
 
     startTransition(() => {
-      router.push(`${pathname}?date=${dateKey}`);
+      router.replace(`${pathname}?date=${dateKey}`, { scroll: false });
     });
   };
 
@@ -115,7 +122,7 @@ export function HabitsTracker({
                 </span>
                 <div className="text-center font-medium">{date.dayNumber}</div>
 
-                {isPending && isLoadingDate === date.key && (
+                {pendingDate === date.key && (
                   <Spinner className="absolute top-1 right-1 size-3" />
                 )}
 
@@ -179,6 +186,7 @@ export function HabitsTracker({
                       }
                       isPending={isPending}
                     />
+
                     <HabitsTrackerDeleteDialog
                       habitName={trackedHabit.habit.name}
                       open={deleteDialogOpen === trackedHabit.habit.id}
