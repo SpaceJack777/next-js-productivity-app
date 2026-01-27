@@ -1,6 +1,9 @@
 "use client";
 
-import { toggleHabitCompletionAction } from "@/server/habits-tracker/actions";
+import {
+  toggleHabitCompletionAction,
+  removeHabitFromTracker,
+} from "@/server/habits-tracker/actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
 import { habitIconMap } from "@/components/habits/habit-icon-selector";
@@ -15,6 +18,7 @@ import { Spinner } from "../ui/spinner";
 import { useRouter } from "next/navigation";
 import { CircularProgress } from "../ui/circular-progress";
 import { HabitsTrackerDeleteDialog } from "./habits-tracker-delete-dialog";
+import { showToast } from "@/lib/toast";
 
 export function HabitsTracker({
   trackedHabits,
@@ -69,6 +73,23 @@ export function HabitsTracker({
     });
   };
 
+  const handleDeleteHabit = (habitId: string, habitName: string) => {
+    setLoadingHabitId(habitId);
+
+    startTransition(async () => {
+      try {
+        await removeHabitFromTracker(habitId);
+        showToast.success(`"${habitName}" was removed successfully!`);
+        setDeleteDialogOpen(null);
+        router.refresh();
+      } catch (error) {
+        showToast.error("Failed to remove habit from tracker: " + error);
+      } finally {
+        setLoadingHabitId(null);
+      }
+    });
+  };
+
   return (
     <>
       <Card>
@@ -111,8 +132,7 @@ export function HabitsTracker({
             <AnimatedList>
               {trackedHabits.map((trackedHabit) => {
                 const Icon = habitIconMap[trackedHabit.habit.icon];
-                const isLoading =
-                  loadingHabitId === trackedHabit.habit.id && isPending;
+                const isLoading = loadingHabitId === trackedHabit.habit.id;
 
                 return (
                   <AnimatedListItem
@@ -164,7 +184,12 @@ export function HabitsTracker({
                         habitName={trackedHabit.habit.name}
                         open={deleteDialogOpen === trackedHabit.habit.id}
                         onOpenChangeAction={() => setDeleteDialogOpen(null)}
-                        setLoadingHabitIdAction={setLoadingHabitId}
+                        onConfirm={() =>
+                          handleDeleteHabit(
+                            trackedHabit.habit.id,
+                            trackedHabit.habit.name,
+                          )
+                        }
                       />
                     </div>
                   </AnimatedListItem>
