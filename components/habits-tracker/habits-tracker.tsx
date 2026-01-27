@@ -187,7 +187,7 @@ export function HabitsTracker({
                       onOpenChangeAction={(open) =>
                         setDeleteDialogOpen(open ? trackedHabit.habit.id : null)
                       }
-                      onConfirm={() =>
+                      onConfirmAction={() =>
                         handleDeleteHabit(
                           trackedHabit.habit.id,
                           trackedHabit.habit.name,

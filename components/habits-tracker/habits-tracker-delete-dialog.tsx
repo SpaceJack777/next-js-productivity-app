@@ -6,20 +6,20 @@ type HabitsTrackerDeleteDialogProps = {
   habitName: string;
   open: boolean;
   onOpenChangeAction: (open: boolean) => void;
-  onConfirm: () => void | Promise<void>;
+  onConfirmAction: () => void | Promise<void>;
 };
 
 export function HabitsTrackerDeleteDialog({
   habitName,
   open,
   onOpenChangeAction,
-  onConfirm,
+  onConfirmAction,
 }: HabitsTrackerDeleteDialogProps) {
   return (
     <ActionDialog
       open={open}
       onOpenChangeAction={onOpenChangeAction}
-      onConfirmAction={onConfirm}
+      onConfirmAction={onConfirmAction}
       title="Remove Habit from Tracker"
       description={`Are you sure you want to remove "${habitName}"? This action will remove all progress for this habit.`}
       confirm="Remove"
