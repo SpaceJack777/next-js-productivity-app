@@ -215,8 +215,8 @@ export default function TiptapToolbar({ editor }: TiptapToolbarProps) {
       <ActionDialog
         title="Insert URL"
         open={showLinkDialog}
-        onOpenChange={setShowLinkDialog}
-        onConfirm={saveLink}
+        onOpenChangeAction={() => setShowLinkDialog(false)}
+        onConfirmAction={() => saveLink()}
         confirm="Save"
       >
         <Input

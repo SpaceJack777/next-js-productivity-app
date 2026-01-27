@@ -12,6 +12,8 @@ import {
   type DeleteNotesFolderInput,
 } from "@/lib/validation/notes-folders";
 
+const revalidate = () => revalidatePath("/notes");
+
 export async function createNotesFolder(input: CreateNotesFolderInput) {
   const validated = createNotesFolderSchema.parse(input);
 
@@ -36,7 +38,7 @@ export async function createNotesFolder(input: CreateNotesFolderInput) {
     },
   });
 
-  revalidatePath("/notes");
+  revalidate();
   return folder;
 }
 
@@ -66,7 +68,7 @@ export async function updateNotesFolder(input: UpdateNotesFolderInput) {
     },
   });
 
-  revalidatePath("/notes");
+  revalidate();
   return updated;
 }
 
@@ -90,6 +92,6 @@ export async function deleteNotesFolder(folderId: DeleteNotesFolderInput) {
     where: { id: validated },
   });
 
-  revalidatePath("/notes");
+  revalidate();
   return { success: true };
 }

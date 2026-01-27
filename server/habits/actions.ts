@@ -13,6 +13,8 @@ import {
   type HabitStatus,
 } from "@/lib/validation/habits";
 
+const revalidate = () => revalidatePath("/habits");
+
 export async function createHabitAction(formData: FormData) {
   const name = formData.get("name") as string;
   const status = formData.get("status") as HabitStatus;
@@ -38,7 +40,7 @@ export async function createHabitAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/habits");
+  revalidate();
 }
 
 export async function updateHabitAction(formData: FormData) {
@@ -77,7 +79,29 @@ export async function updateHabitAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/habits");
+  revalidate();
+}
+
+export async function toggleHabitStatusAction(habitId: string) {
+  const userId = await requireAuth();
+
+  const habit = await prisma.habit.findFirst({
+    where: { id: habitId, userId },
+  });
+
+  if (!habit) {
+    throw new Error("Habit not found");
+  }
+
+  await prisma.habit.update({
+    where: { id: habitId },
+    data: {
+      status: habit.status === "active" ? "inactive" : "active",
+    },
+  });
+
+  revalidate();
+  return { success: true };
 }
 
 export async function deleteHabit(habitId: DeleteHabitInput) {
@@ -96,6 +120,93 @@ export async function deleteHabit(habitId: DeleteHabitInput) {
     where: { id: validated },
   });
 
-  revalidatePath("/habits");
+  revalidate();
+  return { success: true };
+}
+export async function addHabitToTracker(habitId: string) {
+  const userId = await requireAuth();
+
+  const habit = await prisma.habit.findFirst({
+    where: { id: habitId, userId },
+  });
+
+  if (!habit) {
+    throw new Error("Habit not found");
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const existingCompletion = await prisma.habitCompletion.findFirst({
+    where: {
+      habitId,
+      userId,
+    },
+  });
+
+  if (!existingCompletion) {
+    await prisma.habitCompletion.create({
+      data: {
+        habitId,
+        userId,
+        date: today,
+        completed: false,
+      },
+    });
+  }
+
+  revalidate();
+  return { success: true };
+}
+
+export async function toggleHabitCompletion(habitId: string, date: Date) {
+  const userId = await requireAuth();
+
+  const habit = await prisma.habit.findFirst({
+    where: { id: habitId, userId },
+  });
+
+  if (!habit) {
+    throw new Error("Habit not found");
+  }
+
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const existingCompletion = await prisma.habitCompletion.findUnique({
+    where: {
+      habitId_userId_date: {
+        habitId,
+        userId,
+        date: startOfDay,
+      },
+    },
+  });
+
+  if (existingCompletion) {
+    await prisma.habitCompletion.update({
+      where: {
+        habitId_userId_date: {
+          habitId,
+          userId,
+          date: startOfDay,
+        },
+      },
+      data: {
+        completed: !existingCompletion.completed,
+      },
+    });
+  } else {
+    await prisma.habitCompletion.create({
+      data: {
+        habitId,
+        userId,
+        date: startOfDay,
+        completed: true,
+      },
+    });
+  }
+
+  revalidate();
   return { success: true };
 }

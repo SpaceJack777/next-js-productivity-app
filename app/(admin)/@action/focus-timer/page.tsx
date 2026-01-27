@@ -1,3 +1,3 @@
-export default function FocusTimerAction() {
+export default function HabitsTrackerAction() {
   return null;
 }

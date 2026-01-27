@@ -8,30 +8,30 @@ type HabitDeleteDialogProps = {
   habitId: string;
   habitName: string;
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChangeAction: () => void;
 };
 
 export function HabitDeleteDialog({
   habitId,
   habitName,
   open,
-  onOpenChange,
+  onOpenChangeAction,
 }: HabitDeleteDialogProps) {
-  async function handleDelete() {
+  async function handleDeleteAction() {
     try {
       await deleteHabit(habitId);
       showToast.success(`"${habitName}" deleted successfully!`);
-      onOpenChange(false);
+      onOpenChangeAction();
     } catch (error) {
-      showToast.error("Failed to delete habit");
+      showToast.error("Failed to delete habit: " + error);
     }
   }
 
   return (
     <ActionDialog
       open={open}
-      onOpenChange={onOpenChange}
-      onConfirm={handleDelete}
+      onOpenChangeAction={onOpenChangeAction}
+      onConfirmAction={handleDeleteAction}
       title="Delete Habit"
       description={`Are you sure you want to delete "${habitName}"? This action cannot be undone.`}
       confirm="Delete"

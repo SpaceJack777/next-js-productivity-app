@@ -9,19 +9,21 @@ datasource db {
 }
 
 model User {
-  id            String             @id @default(cuid())
-  name          String?
-  email         String?            @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  accounts      Account[]
-  pomodoros     Pomodoro[]
-  sessions      Session[]
-  timerSettings UserTimerSettings?
-  notesFolders  NotesFolder[]
-  notes         Note[]
-  Habit         Habit[]
+  id              String             @id @default(cuid())
+  name            String?
+  email           String?            @unique
+  emailVerified   DateTime?
+  image           String?
+  password        String?
+  accounts        Account[]
+  pomodoros       Pomodoro[]
+  sessions        Session[]
+  timerSettings   UserTimerSettings?
+  notesFolders    NotesFolder[]
+  notes           Note[]
+  Habit           Habit[]
+  HabitCompletion HabitCompletion[]
+  HabitsTracker   HabitsTracker[]
 
   @@map("users")
 }
@@ -124,16 +126,51 @@ enum HabitStatus {
 }
 
 model Habit {
-  id          String      @id @default(cuid())
-  name        String
-  icon        String      @default("Target")
-  description String
-  status      HabitStatus @default(active)
-  userId      String
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String            @id @default(cuid())
+  name            String
+  icon            String            @default("Target")
+  description     String
+  status          HabitStatus       @default(active)
+  userId          String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  HabitCompletion HabitCompletion[]
+  HabitsTracker   HabitsTracker[]
 
   @@index([userId])
   @@map("habits")
+}
+
+model HabitCompletion {
+  id        String   @id @default(cuid())
+  habitId   String
+  userId    String
+  date      DateTime
+  completed Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, userId, date])
+  @@index([userId, date])
+  @@map("habit_completions")
+}
+
+model HabitsTracker {
+  id        String   @id @default(cuid())
+  habitId   String
+  userId    String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, userId])
+  @@index([userId])
+  @@map("habit_trackers")
 }

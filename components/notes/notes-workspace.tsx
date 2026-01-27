@@ -109,14 +109,14 @@ export default function NotesWorkspace({
       <NotesFolderList
         folders={folders}
         selectedFolderId={selectedFolderId}
-        onFolderSelect={handleFolderSelect}
+        onFolderSelectAction={handleFolderSelect}
       />
       <NotesList
         notes={filteredNotes}
         selectedFolderId={selectedFolderId}
         selectedFolder={selectedFolder}
         selectedNoteId={selectedNoteId}
-        onNoteSelect={handleNoteSelect}
+        onNoteSelectAction={handleNoteSelect}
         isLoadingUrlParams={isLoadingUrlParams}
       />
       <NoteEditor

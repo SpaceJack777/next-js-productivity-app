@@ -1,43 +1,43 @@
 "use client";
 
 import {
-  Target,
-  Flame,
   Dumbbell,
-  BookOpen,
-  Coffee,
-  Moon,
   Heart,
-  Zap,
-  Trophy,
-  Star,
+  Glasses,
+  Sword,
+  Disc3,
+  Pill,
+  PawPrint,
+  HouseHeart,
+  Phone,
+  SquareTerminal,
   type LucideIcon,
 } from "lucide-react";
 
 const habitIcons = [
-  { name: "Target", icon: Target },
-  { name: "Flame", icon: Flame },
   { name: "Dumbbell", icon: Dumbbell },
-  { name: "BookOpen", icon: BookOpen },
-  { name: "Coffee", icon: Coffee },
-  { name: "Moon", icon: Moon },
   { name: "Heart", icon: Heart },
-  { name: "Zap", icon: Zap },
-  { name: "Trophy", icon: Trophy },
-  { name: "Star", icon: Star },
+  { name: "Glasses", icon: Glasses },
+  { name: "Sword", icon: Sword },
+  { name: "Disc3", icon: Disc3 },
+  { name: "Pill", icon: Pill },
+  { name: "PawPrint", icon: PawPrint },
+  { name: "HouseHeart", icon: HouseHeart },
+  { name: "Phone", icon: Phone },
+  { name: "SquareTerminal", icon: SquareTerminal },
 ] as const;
 
 export const habitIconMap: Record<string, LucideIcon> = {
-  Target,
-  Flame,
   Dumbbell,
-  BookOpen,
-  Coffee,
-  Moon,
   Heart,
-  Zap,
-  Trophy,
-  Star,
+  Glasses,
+  Sword,
+  Disc3,
+  Pill,
+  PawPrint,
+  HouseHeart,
+  Phone,
+  SquareTerminal,
 };
 
 export type HabitIconName = (typeof habitIcons)[number]["name"];

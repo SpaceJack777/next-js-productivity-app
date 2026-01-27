@@ -17,6 +17,7 @@ export default function Search({ placeholder }: { placeholder: string }) {
     } else {
       params.delete("query");
     }
+
     replace(`${pathname}?${params.toString()}`);
   }, 300);
 
@@ -27,6 +28,7 @@ export default function Search({ placeholder }: { placeholder: string }) {
           Search
         </label>
         <SearchIcon className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+
         <input
           id="search"
           type="text"

@@ -12,6 +12,8 @@ import {
   type DeleteNoteInput,
 } from "@/lib/validation/notes";
 
+const revalidate = () => revalidatePath("/notes");
+
 export async function createNote(input: CreateNoteInput) {
   const validated = createNoteSchema.parse(input);
 
@@ -37,7 +39,7 @@ export async function createNote(input: CreateNoteInput) {
     },
   });
 
-  revalidatePath("/notes");
+  revalidate();
   return note;
 }
 
@@ -76,7 +78,7 @@ export async function updateNote(input: UpdateNoteInput) {
     },
   });
 
-  revalidatePath("/notes");
+  revalidate();
   return updated;
 }
 
@@ -100,6 +102,6 @@ export async function deleteNote(noteId: DeleteNoteInput) {
     where: { id: validated },
   });
 
-  revalidatePath("/notes");
+  revalidate();
   return { success: true };
 }

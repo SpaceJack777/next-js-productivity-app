@@ -13,8 +13,8 @@ import {
 
 type ActionDialogProps = {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void | Promise<void>;
+  onOpenChangeAction: () => void;
+  onConfirmAction: () => void | Promise<void>;
   title?: string;
   description?: string;
   cancel?: string;
@@ -25,8 +25,8 @@ type ActionDialogProps = {
 
 export function ActionDialog({
   open,
-  onOpenChange,
-  onConfirm,
+  onOpenChangeAction,
+  onConfirmAction,
   title = "Action",
   description,
   cancel = "Cancel",
@@ -39,8 +39,8 @@ export function ActionDialog({
   async function handleConfirm() {
     setIsLoading(true);
     try {
-      await onConfirm();
-      onOpenChange(false);
+      await onConfirmAction();
+      onOpenChangeAction();
     } catch (error) {
       console.error("Action failed:", error);
     } finally {
@@ -49,8 +49,8 @@ export function ActionDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onEnter={handleConfirm}>
+    <Dialog open={open} onOpenChange={onOpenChangeAction}>
+      <DialogContent onEnter={() => handleConfirm()}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
@@ -59,13 +59,13 @@ export function ActionDialog({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => onOpenChangeAction()}
             disabled={isLoading}
           >
             {cancel}
           </Button>
           <Button
-            onClick={handleConfirm}
+            onClick={() => handleConfirm()}
             variant={variant}
             disabled={isLoading}
           >

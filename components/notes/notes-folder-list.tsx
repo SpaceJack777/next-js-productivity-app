@@ -12,35 +12,23 @@ import { CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { EmptyState } from "../ui/empty-state";
-import {
-  Plus,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  FolderPlus as SubFolderIcon,
-  FolderX,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Plus, FolderX } from "lucide-react";
 import { NotesFolderDialog } from "./notes-folder-dialog";
 import { NotesDeleteFolderDialog } from "./notes-delete-folder-dialog";
+import { NotesFolderActions } from "./notes-folder-actions";
 import type { NotesFolderWithChildren } from "@/lib/validation/notes-folders";
 import * as LucideIcons from "lucide-react";
 
 type NotesFolderListProps = {
   folders: NotesFolderWithChildren[];
   selectedFolderId?: string;
-  onFolderSelect: (folderId: string) => void;
+  onFolderSelectAction: (folderId: string) => void;
 };
 
 export default function NotesFolderList({
   folders,
   selectedFolderId,
-  onFolderSelect,
+  onFolderSelectAction,
 }: NotesFolderListProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -52,7 +40,6 @@ export default function NotesFolderList({
   const [parentIdForCreate, setParentIdForCreate] = useState<
     string | undefined
   >();
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const handleCreateSubfolder = (parentId: string) => {
     setParentIdForCreate(parentId);
@@ -99,7 +86,7 @@ export default function NotesFolderList({
         >
           <div
             className="flex-1 cursor-pointer"
-            onClick={() => onFolderSelect(folder.id)}
+            onClick={() => onFolderSelectAction(folder.id)}
           >
             <FolderTrigger icon={<IconComponent />} hasChildren={hasChildren}>
               <div className="flex items-center gap-2">
@@ -122,44 +109,21 @@ export default function NotesFolderList({
               </div>
             </FolderTrigger>
           </div>
-          <DropdownMenu
-            open={openDropdownId === folder.id}
-            onOpenChange={(open) => setOpenDropdownId(open ? folder.id : null)}
+          <div
+            className={`transition-opacity ${
+              selectedFolderId === folder.id
+                ? "opacity-100"
+                : "opacity-0 group-hover:opacity-100"
+            }`}
+            onClick={(e) => e.stopPropagation()}
           >
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`h-6 w-6 transition-opacity ${
-                  selectedFolderId === folder.id || openDropdownId === folder.id
-                    ? "opacity-100"
-                    : "opacity-0 group-hover:opacity-100"
-                }`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => handleCreateSubfolder(folder.id)}
-              >
-                <SubFolderIcon className="size-4 mr-2" />
-                New Subfolder
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleEdit(folder)}>
-                <Pencil className="size-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDelete(folder)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="size-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <NotesFolderActions
+              folder={folder}
+              onCreateSubfolder={handleCreateSubfolder}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </div>
         </div>
 
         {folder.children && folder.children.length > 0 && (
