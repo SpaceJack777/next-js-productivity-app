@@ -27,7 +27,6 @@ export type HabitsTrackerProps = {
   trackedHabits: TrackedHabit[];
   completionsByDate: Record<string, Record<string, boolean>>;
   selectedDate: string;
-  progressByDayKey: Record<string, number>;
   days: { key: string; dayName: string; dayNumber: number }[];
 };
 
