@@ -15,13 +15,11 @@ export async function addHabitToTracker(habitId: string) {
       userId,
     },
   });
-
-  revalidate();
 }
 
 export async function toggleHabitCompletionAction(
   dateKey: string,
-  updates: Record<string, boolean>, // habitId -> completed
+  updates: Record<string, boolean>,
 ) {
   const userId = await requireAuth();
   const date = dayKeyToUTCDate(dateKey);
@@ -38,8 +36,6 @@ export async function toggleHabitCompletionAction(
       }),
     ),
   );
-
-  revalidate();
 }
 
 export async function removeHabitFromTracker(habitId: string) {

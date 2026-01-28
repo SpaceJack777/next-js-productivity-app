@@ -16,6 +16,7 @@ import { EmptyState } from "../ui/empty-state";
 import { Plus, X, Loader2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import type { AddHabitModalProps } from "./types";
+import { useRouter } from "next/navigation";
 
 export function AddHabitModal({
   habits,
@@ -25,14 +26,20 @@ export function AddHabitModal({
 }: AddHabitModalProps) {
   const [isPending, startTransition] = useTransition();
   const [loadingHabitId, setLoadingHabitId] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleToggleHabit = (habitId: string, isTracked: boolean) => {
     setLoadingHabitId(habitId);
-    startTransition(() => {
-      if (isTracked) {
-        removeHabitFromTracker(habitId);
-      } else {
-        addHabitToTracker(habitId);
+    startTransition(async () => {
+      try {
+        if (isTracked) {
+          await removeHabitFromTracker(habitId);
+        } else {
+          await addHabitToTracker(habitId);
+        }
+        router.refresh();
+      } finally {
+        setLoadingHabitId(null);
       }
     });
   };
