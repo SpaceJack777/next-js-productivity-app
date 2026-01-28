@@ -14,13 +14,8 @@ import { habitIconMap } from "@/components/habits/habit-icon-selector";
 import { EmptyState } from "../ui/empty-state";
 import { Plus, X } from "lucide-react";
 import { useOptimistic, useTransition, useState } from "react";
-import type { AddHabitModalProps } from "./types";
+import type { AddHabitModalProps, OptimisticAction } from "./types";
 import { useRouter } from "next/navigation";
-
-type OptimisticAction = {
-  habitId: string;
-  action: "add" | "remove";
-};
 
 export function AddHabitModal({
   habits,
@@ -45,14 +40,12 @@ export function AddHabitModal({
   const handleToggleHabit = (habitId: string, isTracked: boolean) => {
     setPendingHabits((prev) => new Set(prev).add(habitId));
 
-    startTransition(() => {
+    startTransition(async () => {
       setOptimisticTrackedIds({
         habitId,
         action: isTracked ? "remove" : "add",
       });
-    });
 
-    startTransition(async () => {
       try {
         if (isTracked) {
           await removeHabitFromTracker(habitId);
@@ -85,40 +78,42 @@ export function AddHabitModal({
           {habits.length > 0 ? (
             habits.map((habit) => {
               const isTracked = optimisticTrackedIds.includes(habit.id);
-              const isThisHabitPending = pendingHabits.has(habit.id);
+              const isPending = pendingHabits.has(habit.id);
 
               return (
-                <div key={habit.id}>
-                  <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted">
-                      {getIcon(habit.icon)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium">{habit.name}</p>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {habit.description}
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant={isTracked ? "outline" : "default"}
-                      className="gap-1.5 shrink-0"
-                      onClick={() => handleToggleHabit(habit.id, isTracked)}
-                      disabled={isThisHabitPending}
-                    >
-                      {isTracked ? (
-                        <>
-                          <X className="size-3.5" />
-                          Remove
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="size-3.5" />
-                          Add
-                        </>
-                      )}
-                    </Button>
+                <div
+                  key={habit.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+                >
+                  <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted">
+                    {getIcon(habit.icon)}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium">{habit.name}</p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {habit.description}
+                    </p>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant={isTracked ? "outline" : "default"}
+                    className="gap-1.5 shrink-0"
+                    onClick={() => handleToggleHabit(habit.id, isTracked)}
+                    disabled={isPending}
+                  >
+                    {isTracked ? (
+                      <>
+                        <X className="size-3.5" />
+                        Remove
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="size-3.5" />
+                        Add
+                      </>
+                    )}
+                  </Button>
                 </div>
               );
             })

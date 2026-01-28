@@ -17,6 +17,10 @@ import type { HabitsTrackerProps, CompletionUpdate } from "./types";
 import { CircularProgress } from "../ui/circular-progress";
 import { HabitsTrackerDeleteDialog } from "./habits-tracker-delete-dialog";
 
+type DeleteUpdate = {
+  habitId: string;
+};
+
 export function HabitsTracker({
   trackedHabits,
   completionsByDate,
@@ -24,7 +28,6 @@ export function HabitsTracker({
   days,
 }: HabitsTrackerProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
-  const [deletingHabitId, setDeletingHabitId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [activeDate, setActiveDate] = useState(selectedDate);
 
@@ -32,8 +35,7 @@ export function HabitsTracker({
   const pathname = usePathname();
 
   const [optimisticCompletions, setOptimisticCompletions] = useOptimistic(
-    completionsByDate, // initial state
-
+    completionsByDate,
     (state, update: CompletionUpdate) => ({
       ...state,
       [update.date]: {
@@ -43,10 +45,18 @@ export function HabitsTracker({
     }),
   );
 
+  const [optimisticHabits, setOptimisticHabits] = useOptimistic(
+    trackedHabits,
+    (state, update: DeleteUpdate) =>
+      state.filter((habit) => habit.habit.id !== update.habitId),
+  );
+
   const getProgress = (dateKey: string) => {
     const completions = optimisticCompletions[dateKey] || {};
     const completedCount = Object.values(completions).filter(Boolean).length;
-    return trackedHabits.length > 0 ? completedCount / trackedHabits.length : 0;
+    return optimisticHabits.length > 0
+      ? completedCount / optimisticHabits.length
+      : 0;
   };
 
   const completionMap = optimisticCompletions[activeDate] || {};
@@ -74,17 +84,15 @@ export function HabitsTracker({
   };
 
   const handleDeleteHabit = (habitId: string) => {
-    setDeletingHabitId(habitId);
-
     startTransition(async () => {
+      setOptimisticHabits({ habitId });
+      setDeleteDialogOpen(null);
+
       try {
         await removeHabitFromTracker(habitId);
         router.refresh();
-        setDeleteDialogOpen(null);
       } catch (error) {
         console.error(error);
-      } finally {
-        setDeletingHabitId(null);
       }
     });
   };
@@ -125,11 +133,10 @@ export function HabitsTracker({
           })}
         </div>
 
-        {trackedHabits.length > 0 ? (
+        {optimisticHabits.length > 0 ? (
           <AnimatedList>
-            {trackedHabits.map((trackedHabit) => {
+            {optimisticHabits.map((trackedHabit) => {
               const Icon = habitIconMap[trackedHabit.habit.icon];
-              const isDeleting = deletingHabitId === trackedHabit.habit.id;
               const isCompleted = completionMap[trackedHabit.habit.id] ?? false;
 
               return (
@@ -137,12 +144,7 @@ export function HabitsTracker({
                   key={trackedHabit.id}
                   itemKey={trackedHabit.id}
                 >
-                  <div
-                    className={cn(
-                      "flex items-center gap-4 px-4 py-2 rounded-lg bg-accent/50 transition-colors",
-                      isDeleting && "opacity-50 pointer-events-none",
-                    )}
-                  >
+                  <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-accent/50 transition-colors">
                     <div className="p-2 rounded-lg bg-background">
                       {Icon && <Icon className="size-5" />}
                     </div>
@@ -156,7 +158,6 @@ export function HabitsTracker({
                     <Checkbox
                       size="lg"
                       checked={isCompleted}
-                      disabled={isDeleting}
                       onCheckedChange={(checked) =>
                         handleToggleCompletion(
                           trackedHabit.habit.id,

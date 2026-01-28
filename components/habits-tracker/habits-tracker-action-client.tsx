@@ -8,6 +8,7 @@ import type { HabitsTrackerActionClientProps } from "./types";
 
 export function HabitsTrackerActionClient({
   habits,
+  trackedHabits,
   trackedHabitIds,
 }: HabitsTrackerActionClientProps) {
   const [open, setOpen] = useState(false);
@@ -21,6 +22,7 @@ export function HabitsTrackerActionClient({
 
       <AddHabitModal
         habits={habits}
+        trackedHabits={trackedHabits}
         trackedHabitIds={trackedHabitIds}
         open={open}
         action={setOpen}

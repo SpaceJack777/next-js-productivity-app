@@ -38,11 +38,13 @@ export type HabitsTrackerActionsProps = {
 
 export type HabitsTrackerActionClientProps = {
   habits: Habit[];
+  trackedHabits: TrackedHabit[];
   trackedHabitIds: string[];
 };
 
 export type AddHabitModalProps = {
   habits: Habit[];
+  trackedHabits: TrackedHabit[];
   trackedHabitIds: string[];
   open: boolean;
   action: (open: boolean) => void;
@@ -52,4 +54,9 @@ export type CompletionUpdate = {
   date: string;
   habitId: string;
   completed: boolean;
+};
+
+export type OptimisticAction = {
+  habitId: string;
+  action: "add" | "remove";
 };

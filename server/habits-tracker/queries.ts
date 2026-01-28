@@ -4,21 +4,10 @@ import { prisma } from "@/prisma/prisma";
 import { requireAuth } from "@/server/server-utils";
 import { dayKeyToUTCDate } from "@/server/server-utils";
 
-export async function getTrackedHabitIds() {
+export async function getTrackedHabitsWithIds() {
   const userId = await requireAuth();
 
-  const rows = await prisma.habitsTracker.findMany({
-    where: { userId },
-    select: { habitId: true },
-  });
-
-  return rows.map((r) => r.habitId);
-}
-
-export async function getTrackedHabits() {
-  const userId = await requireAuth();
-
-  return prisma.habitsTracker.findMany({
+  const trackedHabits = await prisma.habitsTracker.findMany({
     where: { userId },
     orderBy: { order: "asc" },
     select: {
@@ -33,6 +22,11 @@ export async function getTrackedHabits() {
       },
     },
   });
+
+  return {
+    trackedHabits,
+    trackedHabitIds: trackedHabits.map((th) => th.habit.id),
+  };
 }
 
 export async function getHabitCompletionsForDate(dateKey: string) {

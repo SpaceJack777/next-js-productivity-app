@@ -1,6 +1,6 @@
 import { HabitsTracker } from "@/components/habits-tracker/habits-tracker";
 import {
-  getTrackedHabits,
+  getTrackedHabitsWithIds,
   getHabitCompletionsForDate,
   getProgressByDayKey,
 } from "@/server/habits-tracker/queries";
@@ -24,7 +24,7 @@ export default async function HabitsTrackerPage({
 
   const selectedDate = date ?? todayKey;
 
-  const trackedHabits = await getTrackedHabits();
+  const { trackedHabits } = await getTrackedHabitsWithIds();
   const totalHabits = trackedHabits.length;
 
   const [allCompletions, progressByDayKey] = await Promise.all([
