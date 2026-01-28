@@ -1,100 +1,39 @@
 "use client";
 
-import {
-  toggleHabitCompletionAction,
-  removeHabitFromTracker,
-} from "@/server/habits-tracker/actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
 import { habitIconMap } from "@/components/habits/habit-icon-selector";
 import { EmptyState } from "../ui/empty-state";
 import { HabitsTrackerActions } from "./habits-tracker-actions";
-import { useState, useTransition, useOptimistic } from "react";
+import { useState } from "react";
 import { AnimatedList, AnimatedListItem } from "../ui/animated-list";
-import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import type {
-  HabitsTrackerProps,
-  CompletionUpdate,
-  DeleteUpdate,
-} from "./types";
+import type { HabitsTrackerProps } from "./types";
 import { CircularProgress } from "../ui/circular-progress";
 import { HabitsTrackerDeleteDialog } from "./habits-tracker-delete-dialog";
 
 export function HabitsTracker({
   trackedHabits,
   completionsByDate,
-  selectedDate,
   days,
+  activeDate,
+  onSelectDateAction,
+  onDeleteHabitAction,
+  onToggleCompletionAction,
 }: HabitsTrackerProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
-  const [activeDate, setActiveDate] = useState(selectedDate);
-
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const [optimisticCompletions, setOptimisticCompletions] = useOptimistic(
-    completionsByDate,
-    (state, update: CompletionUpdate) => ({
-      ...state,
-      [update.date]: {
-        ...state[update.date],
-        [update.habitId]: update.completed,
-      },
-    }),
-  );
-
-  const [optimisticHabits, setOptimisticHabits] = useOptimistic(
-    trackedHabits,
-    (state, update: DeleteUpdate) =>
-      state.filter((habit) => habit.habit.id !== update.habitId),
-  );
 
   const getProgress = (dateKey: string) => {
-    const completions = optimisticCompletions[dateKey] || {};
+    const completions = completionsByDate[dateKey] || {};
     const completedCount = Object.values(completions).filter(Boolean).length;
-    return optimisticHabits.length > 0
-      ? completedCount / optimisticHabits.length
-      : 0;
+    return trackedHabits.length > 0 ? completedCount / trackedHabits.length : 0;
   };
 
-  const completionMap = optimisticCompletions[activeDate] || {};
+  const completionMap = completionsByDate[activeDate] || {};
 
-  const handleToggleCompletion = (
-    habitId: string,
-    date: string,
-    completed: boolean,
-  ) => {
-    startTransition(async () => {
-      setOptimisticCompletions({ date, habitId, completed });
-
-      try {
-        await toggleHabitCompletionAction(date, { [habitId]: completed });
-        router.refresh();
-      } catch (error) {
-        console.error(error);
-      }
-    });
-  };
-
-  const handleSelectDate = (dateKey: string) => {
-    setActiveDate(dateKey);
-    router.replace(`${pathname}?date=${dateKey}`, { scroll: false });
-  };
-
-  const handleDeleteHabit = (habitId: string) => {
-    startTransition(async () => {
-      setOptimisticHabits({ habitId });
-      setDeleteDialogOpen(null);
-
-      try {
-        await removeHabitFromTracker(habitId);
-        router.refresh();
-      } catch (error) {
-        console.error(error);
-      }
-    });
+  const handleConfirmDelete = (habitId: string) => {
+    onDeleteHabitAction(habitId);
+    setDeleteDialogOpen(null);
   };
 
   return (
@@ -108,7 +47,7 @@ export function HabitsTracker({
               <button
                 key={date.key}
                 type="button"
-                onClick={() => handleSelectDate(date.key)}
+                onClick={() => onSelectDateAction(date.key)}
                 aria-current={isActive ? "date" : undefined}
                 className={cn(
                   "relative px-4 py-2 rounded-lg transition-colors",
@@ -133,16 +72,16 @@ export function HabitsTracker({
           })}
         </div>
 
-        {optimisticHabits.length > 0 ? (
+        {trackedHabits.length > 0 ? (
           <AnimatedList>
-            {optimisticHabits.map((trackedHabit) => {
+            {trackedHabits.map((trackedHabit) => {
               const Icon = habitIconMap[trackedHabit.habit.icon];
               const isCompleted = completionMap[trackedHabit.habit.id] ?? false;
 
               return (
                 <AnimatedListItem
-                  key={trackedHabit.id}
-                  itemKey={trackedHabit.id}
+                  key={trackedHabit.habit.id}
+                  itemKey={trackedHabit.habit.id}
                 >
                   <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-accent/50 transition-colors">
                     <div className="p-2 rounded-lg bg-background">
@@ -159,7 +98,7 @@ export function HabitsTracker({
                       size="lg"
                       checked={isCompleted}
                       onCheckedChange={(checked) =>
-                        handleToggleCompletion(
+                        onToggleCompletionAction(
                           trackedHabit.habit.id,
                           activeDate,
                           Boolean(checked),
@@ -179,7 +118,7 @@ export function HabitsTracker({
                         setDeleteDialogOpen(open ? trackedHabit.habit.id : null)
                       }
                       onConfirmAction={() =>
-                        handleDeleteHabit(trackedHabit.habit.id)
+                        handleConfirmDelete(trackedHabit.habit.id)
                       }
                     />
                   </div>

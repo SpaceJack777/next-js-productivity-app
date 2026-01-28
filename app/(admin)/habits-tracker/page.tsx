@@ -1,5 +1,4 @@
-import { HabitsTracker } from "@/components/habits-tracker/habits-tracker";
-import { HabitsTrackerActionClient } from "@/components/habits-tracker/habits-tracker-action-client";
+import { HabitsTrackerContainer } from "@/components/habits-tracker/habits-tracker-container";
 import {
   getTrackedHabitsWithIds,
   getHabitCompletionsForDate,
@@ -23,16 +22,14 @@ export default async function HabitsTrackerPage({
   const todayKey = today.toISOString().split("T")[0];
   const selectedDate = date ?? todayKey;
 
-  // Fetch all data in parallel
   const [habits, trackedData, allCompletions] = await Promise.all([
     getActiveHabits(),
     getTrackedHabitsWithIds(),
     Promise.all(dayKeys.map((key) => getHabitCompletionsForDate(key))),
   ]);
 
-  const { trackedHabits, trackedHabitIds } = trackedData;
+  const { trackedHabits } = trackedData;
 
-  // Build completions map
   const completionsByDate = Object.fromEntries(
     dayKeys.map((key, index) => [
       key,
@@ -44,18 +41,11 @@ export default async function HabitsTrackerPage({
 
   return (
     <>
-      <PageHeader
-        action={
-          <HabitsTrackerActionClient
-            habits={habits}
-            trackedHabits={trackedHabits}
-            trackedHabitIds={trackedHabitIds}
-          />
-        }
-      />
+      <PageHeader />
 
-      <HabitsTracker
-        trackedHabits={trackedHabits}
+      <HabitsTrackerContainer
+        habits={habits}
+        initialTrackedHabits={trackedHabits}
         completionsByDate={completionsByDate}
         selectedDate={selectedDate}
         days={days}

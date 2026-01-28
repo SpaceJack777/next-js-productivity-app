@@ -23,29 +23,8 @@ export type Habit = Prisma.HabitGetPayload<{
   };
 }>;
 
-export type HabitsTrackerProps = {
-  trackedHabits: TrackedHabit[];
-  completionsByDate: Record<string, Record<string, boolean>>;
-  selectedDate: string;
-  days: { key: string; dayName: string; dayNumber: number }[];
-};
-
 export type HabitsTrackerActionsProps = {
   onDeleteAction: () => void;
-};
-
-export type HabitsTrackerActionClientProps = {
-  habits: Habit[];
-  trackedHabits: TrackedHabit[];
-  trackedHabitIds: string[];
-};
-
-export type AddHabitModalProps = {
-  habits: Habit[];
-  trackedHabits: TrackedHabit[];
-  trackedHabitIds: string[];
-  open: boolean;
-  action: (open: boolean) => void;
 };
 
 export type CompletionUpdate = {
@@ -61,4 +40,44 @@ export type OptimisticAction = {
 
 export type DeleteUpdate = {
   habitId: string;
+};
+
+export type HabitsTrackerContainerProps = {
+  habits: Habit[];
+  trackedHabits: TrackedHabit[];
+  trackedHabitIds: string[];
+  completionsByDate: Record<string, Record<string, boolean>>;
+  selectedDate: string;
+  days: Array<{ key: string; dayName: string; dayNumber: string }>;
+};
+
+export type HabitsTrackerProps = {
+  trackedHabits: TrackedHabit[];
+  completionsByDate: Record<string, Record<string, boolean>>;
+  selectedDate: string;
+  days: Array<{ key: string; dayName: string; dayNumber: number }>;
+  activeDate: string;
+  onSelectDateAction: (dateKey: string) => void;
+  onDeleteHabitAction: (habitId: string) => void;
+  onToggleCompletionAction: (
+    habitId: string,
+    date: string,
+    completed: boolean,
+  ) => void;
+};
+
+export type HabitsTrackerActionClientProps = {
+  habits: Habit[];
+  trackedHabitIds: string[];
+  onToggleHabitAction: (habitId: string, isTracked: boolean) => void;
+  pendingHabits: Set<string>;
+};
+
+export type AddHabitModalProps = {
+  habits: Habit[];
+  trackedHabitIds: string[];
+  open: boolean;
+  action: (open: boolean) => void;
+  onToggleHabitAction: (habitId: string, isTracked: boolean) => void; // Renamed
+  pendingHabits: Set<string>;
 };

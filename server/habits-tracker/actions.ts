@@ -3,6 +3,8 @@
 import { prisma } from "@/prisma/prisma";
 import { requireAuth, dayKeyToUTCDate } from "@/server/server-utils";
 
+import { revalidatePath } from "next/cache";
+const revalidate = () => revalidatePath("/habits-tracker");
 export async function addHabitToTracker(habitId: string) {
   const userId = await requireAuth();
 
@@ -12,6 +14,8 @@ export async function addHabitToTracker(habitId: string) {
       userId,
     },
   });
+
+  revalidate();
 }
 
 export async function toggleHabitCompletionAction(
@@ -33,6 +37,8 @@ export async function toggleHabitCompletionAction(
       }),
     ),
   );
+
+  revalidate();
 }
 
 export async function removeHabitFromTracker(habitId: string) {
@@ -53,4 +59,6 @@ export async function removeHabitFromTracker(habitId: string) {
       },
     }),
   ]);
+
+  revalidate();
 }

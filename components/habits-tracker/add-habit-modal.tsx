@@ -5,66 +5,20 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/animate-ui/components/radix/dialog";
-import {
-  addHabitToTracker,
-  removeHabitFromTracker,
-} from "@/server/habits-tracker/actions";
 import { Button } from "@/components/ui/button";
 import { habitIconMap } from "@/components/habits/habit-icon-selector";
 import { EmptyState } from "../ui/empty-state";
 import { Plus, X } from "lucide-react";
-import { useOptimistic, useTransition, useState } from "react";
-import type { AddHabitModalProps, OptimisticAction } from "./types";
-import { useRouter } from "next/navigation";
+import type { AddHabitModalProps } from "./types";
 
 export function AddHabitModal({
   habits,
   trackedHabitIds,
   open,
   action,
+  onToggleHabitAction,
+  pendingHabits,
 }: AddHabitModalProps) {
-  const [, startTransition] = useTransition();
-  const [pendingHabits, setPendingHabits] = useState<Set<string>>(new Set());
-  const router = useRouter();
-
-  const [optimisticTrackedIds, setOptimisticTrackedIds] = useOptimistic(
-    trackedHabitIds,
-    (state: string[], update: OptimisticAction) => {
-      if (update.action === "add") {
-        return [...state, update.habitId];
-      }
-      return state.filter((id) => id !== update.habitId);
-    },
-  );
-
-  const handleToggleHabit = (habitId: string, isTracked: boolean) => {
-    setPendingHabits((prev) => new Set(prev).add(habitId));
-
-    startTransition(async () => {
-      setOptimisticTrackedIds({
-        habitId,
-        action: isTracked ? "remove" : "add",
-      });
-
-      try {
-        if (isTracked) {
-          await removeHabitFromTracker(habitId);
-        } else {
-          await addHabitToTracker(habitId);
-        }
-        router.refresh();
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setPendingHabits((prev) => {
-          const next = new Set(prev);
-          next.delete(habitId);
-          return next;
-        });
-      }
-    });
-  };
-
   const getIcon = (iconName: string) => {
     const Icon = habitIconMap[iconName];
     return Icon ? <Icon className="size-5" /> : null;
@@ -77,7 +31,7 @@ export function AddHabitModal({
         <div className="mt-4 overflow-y-auto pr-2 space-y-2">
           {habits.length > 0 ? (
             habits.map((habit) => {
-              const isTracked = optimisticTrackedIds.includes(habit.id);
+              const isTracked = trackedHabitIds.includes(habit.id);
               const isPending = pendingHabits.has(habit.id);
 
               return (
@@ -99,7 +53,7 @@ export function AddHabitModal({
                     size="sm"
                     variant={isTracked ? "outline" : "default"}
                     className="gap-1.5 shrink-0"
-                    onClick={() => handleToggleHabit(habit.id, isTracked)}
+                    onClick={() => onToggleHabitAction(habit.id, isTracked)}
                     disabled={isPending}
                   >
                     {isTracked ? (
