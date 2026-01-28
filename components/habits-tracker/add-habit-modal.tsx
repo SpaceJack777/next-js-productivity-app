@@ -9,14 +9,19 @@ import {
   addHabitToTracker,
   removeHabitFromTracker,
 } from "@/server/habits-tracker/actions";
-
 import { Button } from "@/components/ui/button";
 import { habitIconMap } from "@/components/habits/habit-icon-selector";
 import { EmptyState } from "../ui/empty-state";
-import { Plus, X, Loader2 } from "lucide-react";
-import { useState, useTransition } from "react";
+import { Plus, X } from "lucide-react";
+import { useOptimistic, useTransition } from "react";
 import type { AddHabitModalProps } from "./types";
 import { useRouter } from "next/navigation";
+import { showToast } from "@/lib/toast";
+
+type OptimisticAction = {
+  habitId: string;
+  action: "add" | "remove";
+};
 
 export function AddHabitModal({
   habits,
@@ -25,21 +30,36 @@ export function AddHabitModal({
   action,
 }: AddHabitModalProps) {
   const [isPending, startTransition] = useTransition();
-  const [loadingHabitId, setLoadingHabitId] = useState<string | null>(null);
   const router = useRouter();
 
+  const [optimisticTrackedIds, setOptimisticTrackedIds] = useOptimistic(
+    trackedHabitIds,
+    (state: string[], update: OptimisticAction) => {
+      if (update.action === "add") {
+        return [...state, update.habitId];
+      }
+      return state.filter((id) => id !== update.habitId);
+    },
+  );
+
   const handleToggleHabit = (habitId: string, isTracked: boolean) => {
-    setLoadingHabitId(habitId);
+    setOptimisticTrackedIds({
+      habitId,
+      action: isTracked ? "remove" : "add",
+    });
+
     startTransition(async () => {
       try {
         if (isTracked) {
           await removeHabitFromTracker(habitId);
+          showToast.success("Habit removed from tracker");
         } else {
           await addHabitToTracker(habitId);
+          showToast.success("Habit added to tracker");
         }
         router.refresh();
-      } finally {
-        setLoadingHabitId(null);
+      } catch (error) {
+        showToast.error("Failed to update habit. Please try again." + error);
       }
     });
   };
@@ -56,8 +76,7 @@ export function AddHabitModal({
         <div className="mt-4 overflow-y-auto pr-2 space-y-2">
           {habits.length > 0 ? (
             habits.map((habit) => {
-              const isTracked = trackedHabitIds.includes(habit.id);
-              const isLoading = loadingHabitId === habit.id && isPending;
+              const isTracked = optimisticTrackedIds.includes(habit.id);
 
               return (
                 <div key={habit.id}>
@@ -76,16 +95,19 @@ export function AddHabitModal({
                       variant={isTracked ? "outline" : "default"}
                       className="gap-1.5 shrink-0"
                       onClick={() => handleToggleHabit(habit.id, isTracked)}
-                      disabled={isLoading}
+                      disabled={isPending}
                     >
-                      {isLoading ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                      ) : isTracked ? (
-                        <X className="size-3.5" />
+                      {isTracked ? (
+                        <>
+                          <X className="size-3.5" />
+                          Remove
+                        </>
                       ) : (
-                        <Plus className="size-3.5" />
+                        <>
+                          <Plus className="size-3.5" />
+                          Add
+                        </>
                       )}
-                      {isTracked ? "Remove habit" : "Add habit"}
                     </Button>
                   </div>
                 </div>

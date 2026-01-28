@@ -172,5 +172,6 @@ model HabitsTracker {
 
   @@unique([habitId, userId])
   @@index([userId])
+  @@index([userId, order])
   @@map("habit_trackers")
 }
