@@ -45,9 +45,11 @@ export function AddHabitModal({
   const handleToggleHabit = (habitId: string, isTracked: boolean) => {
     setPendingHabits((prev) => new Set(prev).add(habitId));
 
-    setOptimisticTrackedIds({
-      habitId,
-      action: isTracked ? "remove" : "add",
+    startTransition(() => {
+      setOptimisticTrackedIds({
+        habitId,
+        action: isTracked ? "remove" : "add",
+      });
     });
 
     startTransition(async () => {

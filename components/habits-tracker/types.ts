@@ -47,3 +47,9 @@ export type AddHabitModalProps = {
   open: boolean;
   action: (open: boolean) => void;
 };
+
+export type CompletionUpdate = {
+  date: string;
+  habitId: string;
+  completed: boolean;
+};
