@@ -196,10 +196,10 @@ export default function SignUpPage() {
         <Button
           variant="outline"
           className="w-full"
+          disabled={loading}
           onClick={() => {
             setLoading(true);
             signIn("github", { callbackUrl: "/dashboard" });
-            setLoading(false);
           }}
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
