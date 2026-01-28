@@ -5,6 +5,8 @@ import {
   getProgressByDayKey,
 } from "@/server/habits-tracker/queries";
 import { getDayKeys } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
+import HabitsTrackerAction from "@/components/habits-tracker/habits-tracker-page-action";
 
 type HabitsTrackerPageProps = {
   searchParams: Promise<{ date?: string }>;
@@ -40,12 +42,15 @@ export default async function HabitsTrackerPage({
   );
 
   return (
-    <HabitsTracker
-      trackedHabits={trackedHabits}
-      completionsByDate={completionsByDate}
-      selectedDate={selectedDate}
-      progressByDayKey={progressByDayKey}
-      days={days}
-    />
+    <>
+      <PageHeader action={<HabitsTrackerAction />} />
+      <HabitsTracker
+        trackedHabits={trackedHabits}
+        completionsByDate={completionsByDate}
+        selectedDate={selectedDate}
+        progressByDayKey={progressByDayKey}
+        days={days}
+      />
+    </>
   );
 }

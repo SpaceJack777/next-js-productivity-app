@@ -1,26 +1,15 @@
 import {
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/animate-ui/components/radix/sidebar";
-import Breadcrumbs from "@/components/app-breadcrumbs";
 import { AppSidebar } from "@/components/app-sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Separator } from "@/components/ui/separator";
 import { getSession } from "@/lib/get-session";
 import { SessionProvider } from "@/lib/session-context";
 import { redirect } from "next/navigation";
-import { PropsWithChildren, ReactNode, Suspense } from "react";
+import { PropsWithChildren, Suspense } from "react";
 import { LayoutLoadingSkeleton } from "@/components/layout-loading-skeleton";
 
-type AuthenticatedLayoutProps = PropsWithChildren & {
-  action?: ReactNode;
-};
-
-async function AuthenticatedLayout({
-  children,
-  action,
-}: AuthenticatedLayoutProps) {
+async function AuthenticatedLayout({ children }: PropsWithChildren) {
   const session = await getSession();
 
   if (!session) {
@@ -32,20 +21,6 @@ async function AuthenticatedLayout({
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center justify-between px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="-ml-1" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
-              />
-              <Breadcrumbs />
-            </div>
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              {action}
-            </div>
-          </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0 h-full">
             {children}
           </div>
@@ -55,15 +30,10 @@ async function AuthenticatedLayout({
   );
 }
 
-type LayoutProps = {
-  children: ReactNode;
-  action?: ReactNode;
-};
-
-export default function Layout({ children, action }: LayoutProps) {
+export default function Layout({ children }: PropsWithChildren) {
   return (
     <Suspense fallback={<LayoutLoadingSkeleton />}>
-      <AuthenticatedLayout action={action}>{children}</AuthenticatedLayout>
+      <AuthenticatedLayout>{children}</AuthenticatedLayout>
     </Suspense>
   );
 }
