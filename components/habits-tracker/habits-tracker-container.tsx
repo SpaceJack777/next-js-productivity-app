@@ -35,7 +35,6 @@ export function HabitsTrackerContainer({
   const router = useRouter();
   const pathname = usePathname();
   const [activeDate, setActiveDate] = useState(selectedDate);
-  const [pendingHabits, setPendingHabits] = useState<Set<string>>(new Set());
 
   const [optimisticHabits, setOptimisticHabits] = useOptimistic(
     initialTrackedHabits,
@@ -78,8 +77,6 @@ export function HabitsTrackerContainer({
   );
 
   const handleToggleHabit = (habitId: string, isTracked: boolean) => {
-    setPendingHabits((prev) => new Set(prev).add(habitId));
-
     startTransition(async () => {
       setOptimisticHabits({
         type: isTracked ? "remove" : "add",
@@ -95,11 +92,7 @@ export function HabitsTrackerContainer({
       } catch (error) {
         console.error(error);
       } finally {
-        setPendingHabits((prev) => {
-          const next = new Set(prev);
-          next.delete(habitId);
-          return next;
-        });
+        router.refresh();
       }
     });
   };
@@ -145,7 +138,6 @@ export function HabitsTrackerContainer({
             habits={habits}
             trackedHabitIds={optimisticTrackedIds}
             onToggleHabitAction={handleToggleHabit}
-            pendingHabits={pendingHabits}
           />
         }
       />

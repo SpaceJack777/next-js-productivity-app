@@ -10,7 +10,6 @@ export function HabitsTrackerActionClient({
   habits,
   trackedHabitIds,
   onToggleHabitAction,
-  pendingHabits,
 }: HabitsTrackerActionClientProps) {
   const [open, setOpen] = useState(false);
 
@@ -27,7 +26,6 @@ export function HabitsTrackerActionClient({
         open={open}
         action={setOpen}
         onToggleHabitAction={onToggleHabitAction}
-        pendingHabits={pendingHabits}
       />
     </>
   );

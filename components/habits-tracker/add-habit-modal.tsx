@@ -17,7 +17,6 @@ export function AddHabitModal({
   open,
   action,
   onToggleHabitAction,
-  pendingHabits,
 }: AddHabitModalProps) {
   const getIcon = (iconName: string) => {
     const Icon = habitIconMap[iconName];
@@ -32,7 +31,6 @@ export function AddHabitModal({
           {habits.length > 0 ? (
             habits.map((habit) => {
               const isTracked = trackedHabitIds.includes(habit.id);
-              const isPending = pendingHabits.has(habit.id);
 
               return (
                 <div
@@ -54,7 +52,6 @@ export function AddHabitModal({
                     variant={isTracked ? "outline" : "default"}
                     className="gap-1.5 shrink-0"
                     onClick={() => onToggleHabitAction(habit.id, isTracked)}
-                    disabled={isPending}
                   >
                     {isTracked ? (
                       <>

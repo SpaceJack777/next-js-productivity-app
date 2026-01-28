@@ -70,7 +70,6 @@ export type HabitsTrackerActionClientProps = {
   habits: Habit[];
   trackedHabitIds: string[];
   onToggleHabitAction: (habitId: string, isTracked: boolean) => void;
-  pendingHabits: Set<string>;
 };
 
 export type AddHabitModalProps = {
@@ -79,5 +78,4 @@ export type AddHabitModalProps = {
   open: boolean;
   action: (open: boolean) => void;
   onToggleHabitAction: (habitId: string, isTracked: boolean) => void; // Renamed
-  pendingHabits: Set<string>;
 };
