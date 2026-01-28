@@ -28,7 +28,7 @@ export function AddHabitModal({
   open,
   action,
 }: AddHabitModalProps) {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [pendingHabits, setPendingHabits] = useState<Set<string>>(new Set());
   const router = useRouter();
 

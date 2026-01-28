@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/animate-ui/components/radix/checkbox";
 import { habitIconMap } from "@/components/habits/habit-icon-selector";
 import { EmptyState } from "../ui/empty-state";
 import { HabitsTrackerActions } from "./habits-tracker-actions";
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useOptimistic } from "react";
 import { AnimatedList, AnimatedListItem } from "../ui/animated-list";
 import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -18,44 +18,83 @@ import { CircularProgress } from "../ui/circular-progress";
 import { HabitsTrackerDeleteDialog } from "./habits-tracker-delete-dialog";
 import { showToast } from "@/lib/toast";
 
+type CompletionUpdate = {
+  date: string;
+  habitId: string;
+  completed: boolean;
+};
+
 export function HabitsTracker({
   trackedHabits,
-  completionsByDate,
+  completionsByDate: initialCompletionsByDate,
   selectedDate: initialDate,
-  progressByDayKey,
+  progressByDayKey: initialProgress,
   days,
 }: HabitsTrackerProps) {
-  const [loadingHabitId, setLoadingHabitId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
+  const [deletingHabitId, setDeletingHabitId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [activeDate, setActiveDate] = useState(initialDate);
-  const [optimisticCompletionsByDate, setOptimisticCompletionsByDate] =
-    useState(completionsByDate);
 
   const router = useRouter();
   const pathname = usePathname();
 
-  const completionMap = optimisticCompletionsByDate[activeDate] || {};
+  const totalHabits = trackedHabits.length;
+
+  const [optimisticCompletionsByDate, setOptimisticCompletions] = useOptimistic(
+    initialCompletionsByDate,
+    (state, update: CompletionUpdate) => ({
+      ...state,
+      [update.date]: {
+        ...state[update.date],
+        [update.habitId]: update.completed,
+      },
+    }),
+  );
+
+  const [optimisticProgress, setOptimisticProgress] = useOptimistic(
+    initialProgress,
+    (state, update: CompletionUpdate) => {
+      const currentCompletion =
+        initialCompletionsByDate[update.date]?.[update.habitId] || false;
+      const currentProgress = state[update.date] || 0;
+
+      let delta = 0;
+      if (update.completed && !currentCompletion) {
+        delta = 1 / totalHabits;
+      } else if (!update.completed && currentCompletion) {
+        delta = -1 / totalHabits;
+      }
+
+      return {
+        ...state,
+        [update.date]: Math.max(0, Math.min(1, currentProgress + delta)),
+      };
+    },
+  );
 
   useEffect(() => {
     setActiveDate(initialDate);
   }, [initialDate]);
+
+  const completionMap = optimisticCompletionsByDate[activeDate] || {};
 
   const handleToggleHabitCompletionAction = (
     habitId: string,
     date: string,
     completed: boolean,
   ) => {
-    setOptimisticCompletionsByDate((prev) => ({
-      ...prev,
-      [date]: {
-        ...prev[date],
-        [habitId]: completed,
-      },
-    }));
+    const update: CompletionUpdate = { date, habitId, completed };
 
-    startTransition(() => {
-      toggleHabitCompletionAction(date, { [habitId]: completed });
+    setOptimisticCompletions(update);
+    setOptimisticProgress(update);
+
+    startTransition(async () => {
+      try {
+        await toggleHabitCompletionAction(date, { [habitId]: completed });
+      } catch (error) {
+        showToast.error("Failed to update habit" + error);
+      }
     });
   };
 
@@ -65,17 +104,18 @@ export function HabitsTracker({
   };
 
   const handleDeleteHabit = (habitId: string, habitName: string) => {
-    setLoadingHabitId(habitId);
+    setDeletingHabitId(habitId);
 
     startTransition(async () => {
       try {
         await removeHabitFromTracker(habitId);
+        router.refresh();
         showToast.success(`"${habitName}" was removed successfully!`);
         setDeleteDialogOpen(null);
       } catch (error) {
-        showToast.error("Failed to remove habit from tracker: " + error);
+        showToast.error("Failed to remove habit from tracker" + error);
       } finally {
-        setLoadingHabitId(null);
+        setDeletingHabitId(null);
       }
     });
   };
@@ -106,7 +146,7 @@ export function HabitsTracker({
                 <div className="text-center font-medium">{date.dayNumber}</div>
 
                 <CircularProgress
-                  progress={progressByDayKey[date.key] ?? 0}
+                  progress={optimisticProgress[date.key] ?? 0}
                   size={24}
                   className="size-4 mt-1 mb-1 mx-auto"
                   circleColor="text-blue-500"
@@ -120,7 +160,7 @@ export function HabitsTracker({
           <AnimatedList>
             {trackedHabits.map((trackedHabit) => {
               const Icon = habitIconMap[trackedHabit.habit.icon];
-              const isLoading = loadingHabitId === trackedHabit.habit.id;
+              const isDeleting = deletingHabitId === trackedHabit.habit.id;
 
               return (
                 <AnimatedListItem
@@ -130,7 +170,7 @@ export function HabitsTracker({
                   <div
                     className={cn(
                       "flex items-center gap-4 px-4 py-2 rounded-lg bg-accent/50 transition-colors",
-                      isLoading && "opacity-50 pointer-events-none",
+                      isDeleting && "opacity-50 pointer-events-none",
                     )}
                   >
                     <div className="p-2 rounded-lg bg-background">
@@ -147,7 +187,7 @@ export function HabitsTracker({
                     <Checkbox
                       size="lg"
                       checked={completionMap[trackedHabit.habit.id] ?? false}
-                      disabled={isLoading}
+                      disabled={isDeleting}
                       onCheckedChange={(checked) =>
                         handleToggleHabitCompletionAction(
                           trackedHabit.habit.id,
