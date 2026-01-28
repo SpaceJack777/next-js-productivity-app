@@ -28,7 +28,7 @@ export function HabitsTracker({
   days,
 }: HabitsTrackerProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [activeDate, setActiveDate] = useState(selectedDate);
 
   const router = useRouter();
@@ -171,7 +171,6 @@ export function HabitsTracker({
                       onDeleteAction={() =>
                         setDeleteDialogOpen(trackedHabit.habit.id)
                       }
-                      isPending={isPending}
                     />
                     <HabitsTrackerDeleteDialog
                       habitName={trackedHabit.habit.name}

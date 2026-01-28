@@ -33,7 +33,6 @@ export type HabitsTrackerProps = {
 
 export type HabitsTrackerActionsProps = {
   onDeleteAction: () => void;
-  isPending: boolean;
 };
 
 export type HabitsTrackerActionClientProps = {
