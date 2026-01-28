@@ -53,7 +53,6 @@ export function HabitsTrackerContainer({
           ];
         }
       } else {
-        // remove
         return state.filter((h) => h.habit.id !== update.habitId);
       }
       return state;
