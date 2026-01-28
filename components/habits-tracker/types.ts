@@ -58,3 +58,7 @@ export type OptimisticAction = {
   habitId: string;
   action: "add" | "remove";
 };
+
+export type DeleteUpdate = {
+  habitId: string;
+};

@@ -13,13 +13,13 @@ import { useState, useTransition, useOptimistic } from "react";
 import { AnimatedList, AnimatedListItem } from "../ui/animated-list";
 import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import type { HabitsTrackerProps, CompletionUpdate } from "./types";
+import type {
+  HabitsTrackerProps,
+  CompletionUpdate,
+  DeleteUpdate,
+} from "./types";
 import { CircularProgress } from "../ui/circular-progress";
 import { HabitsTrackerDeleteDialog } from "./habits-tracker-delete-dialog";
-
-type DeleteUpdate = {
-  habitId: string;
-};
 
 export function HabitsTracker({
   trackedHabits,
