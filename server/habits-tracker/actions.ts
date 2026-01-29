@@ -45,6 +45,8 @@ export async function toggleHabitCompletionAction(
       }),
     ),
   );
+
+  revalidate();
 }
 
 export async function removeHabitFromTracker(habitId: string) {
