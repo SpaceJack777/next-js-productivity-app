@@ -75,6 +75,15 @@ export function HabitsTrackerContainer({
   const handleDeleteHabit = (habitId: string) => {
     startTransition(async () => {
       setTrackedHabits((prev) => prev.filter((h) => h.habit.id !== habitId));
+
+      setCompletions((prev) => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach((date) => {
+          delete updated[date][habitId];
+        });
+        return updated;
+      });
+
       try {
         await removeHabitFromTracker(habitId);
       } catch (error) {
