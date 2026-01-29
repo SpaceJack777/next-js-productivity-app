@@ -81,7 +81,6 @@ export function HabitsTrackerContainer({
         habitId,
       });
 
-      // Update local state immediately
       if (isTracked) {
         setTrackedHabits((prev) => prev.filter((h) => h.habit.id !== habitId));
       } else {
@@ -114,8 +113,6 @@ export function HabitsTrackerContainer({
           );
         } catch (error) {
           console.error(error);
-        } finally {
-          router.refresh();
         }
       }, 700);
     });
