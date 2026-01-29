@@ -130,6 +130,14 @@ export function HabitsTrackerContainer({
       setOptimisticHabits({ type: "remove", habitId });
       setTrackedHabits((prev) => prev.filter((h) => h.habit.id !== habitId));
 
+      setCompletions((prev) => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach((dateKey) => {
+          delete updated[dateKey][habitId];
+        });
+        return updated;
+      });
+
       try {
         await removeHabitFromTracker(habitId);
       } catch (error) {
