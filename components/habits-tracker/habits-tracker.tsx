@@ -25,7 +25,10 @@ export function HabitsTracker({
 
   const getProgress = (dateKey: string) => {
     const completions = completionsByDate[dateKey] || {};
-    const completedCount = Object.values(completions).filter(Boolean).length;
+    const trackedHabitIds = trackedHabits.map((h) => h.habit.id);
+    const completedCount = Object.entries(completions).filter(
+      ([habitId, completed]) => completed && trackedHabitIds.includes(habitId),
+    ).length;
     return trackedHabits.length > 0 ? completedCount / trackedHabits.length : 0;
   };
 
