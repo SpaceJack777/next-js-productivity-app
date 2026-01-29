@@ -35,7 +35,7 @@ export async function RecentHabits() {
     <DashboardStatCard
       title="Todays Habits Tracked"
       viewAllHref="/habits-tracker"
-      viewAllLabel="View all habits"
+      viewAllLabel="View all"
       stats={stats}
     />
   );
