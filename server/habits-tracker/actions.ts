@@ -5,11 +5,19 @@ import { requireAuth, dayKeyToUTCDate } from "@/server/server-utils";
 
 import { revalidatePath } from "next/cache";
 const revalidate = () => revalidatePath("/habits-tracker");
+
 export async function addHabitToTracker(habitId: string) {
   const userId = await requireAuth();
 
-  await prisma.habitsTracker.create({
-    data: {
+  await prisma.habitsTracker.upsert({
+    where: {
+      habitId_userId: {
+        habitId,
+        userId,
+      },
+    },
+    update: {},
+    create: {
       habitId,
       userId,
     },
