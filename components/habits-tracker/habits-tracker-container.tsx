@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useState, useMemo, useRef } from "react";
+import { useTransition, useState, useMemo, useRef, useOptimistic } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { HabitsTracker } from "./habits-tracker";
 import { HabitsTrackerActionClient } from "./habits-tracker-action-client";
@@ -37,6 +37,13 @@ export function HabitsTrackerContainer({
   const pendingUpdatesRef = useRef<Record<string, Record<string, boolean>>>({});
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [optimisticTrackedHabits, removeOptimisticHabit] = useOptimistic(
+    trackedHabits,
+    (state: TrackedHabit[], habitIdToRemove: string) => {
+      return state.filter((h) => h.habit.id !== habitIdToRemove);
+    },
+  );
+
   const trackedHabitIds = useMemo(
     () => trackedHabits.map((h) => h.habit.id),
     [trackedHabits],
@@ -72,20 +79,21 @@ export function HabitsTrackerContainer({
     });
   };
 
-  const handleDeleteHabit = (habitId: string) => {
+  const handleDeleteHabit = async (habitId: string) => {
     startTransition(async () => {
-      setTrackedHabits((prev) => prev.filter((h) => h.habit.id !== habitId));
-
-      setCompletions((prev) => {
-        const updated = { ...prev };
-        Object.keys(updated).forEach((date) => {
-          delete updated[date][habitId];
-        });
-        return updated;
-      });
-
+      removeOptimisticHabit(habitId);
       try {
         await removeHabitFromTracker(habitId);
+
+        setTrackedHabits((prev) => prev.filter((h) => h.habit.id !== habitId));
+
+        setCompletions((prev) => {
+          const updated = { ...prev };
+          Object.keys(updated).forEach((date) => {
+            delete updated[date][habitId];
+          });
+          return updated;
+        });
       } catch (error) {
         console.error(error);
       }
@@ -151,7 +159,7 @@ export function HabitsTrackerContainer({
       />
 
       <HabitsTracker
-        trackedHabits={trackedHabits}
+        trackedHabits={optimisticTrackedHabits}
         completionsByDate={completions}
         selectedDate={selectedDate}
         days={days}

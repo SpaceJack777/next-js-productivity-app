@@ -20,9 +20,9 @@ export function HabitsTrackerDeleteDialog({
       open={open}
       onOpenChangeAction={onOpenChangeAction}
       onConfirmAction={onConfirmAction}
-      title="Remove Habit from Tracker"
-      description={`Are you sure you want to remove "${habitName}"? This action will remove all progress for this habit.`}
-      confirm="Remove"
+      title="Delete Habit from Tracker"
+      description={`Are you sure you want to delete "${habitName}"? This action will delete all progress for this habit.`}
+      confirm="Delete"
       variant="destructive"
     />
   );
