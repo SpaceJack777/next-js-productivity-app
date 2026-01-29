@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useTransition, useState, useMemo } from "react";
+import { useTransition, useState, useMemo, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { HabitsTracker } from "./habits-tracker";
 import { HabitsTrackerActionClient } from "./habits-tracker-action-client";
@@ -9,19 +9,15 @@ import {
   removeHabitFromTracker,
   addHabitToTracker,
 } from "@/server/habits-tracker/actions";
-import type { CompletionUpdate, TrackedHabit, Habit } from "./types";
+import type { TrackedHabit, Habit } from "./types";
 import { PageHeader } from "../page-header";
-
-type OptimisticHabitUpdate =
-  | { type: "add"; habitId: string }
-  | { type: "remove"; habitId: string };
 
 type HabitsTrackerContainerProps = {
   habits: Habit[];
   initialTrackedHabits: TrackedHabit[];
   completionsByDate: Record<string, Record<string, boolean>>;
   selectedDate: string;
-  days: Array<{ key: string; dayName: string; dayNumber: number }>; // Changed from string to number
+  days: Array<{ key: string; dayName: string; dayNumber: number }>;
 };
 
 export function HabitsTrackerContainer({
@@ -35,71 +31,50 @@ export function HabitsTrackerContainer({
   const router = useRouter();
   const pathname = usePathname();
   const [activeDate, setActiveDate] = useState(selectedDate);
+  const [trackedHabits, setTrackedHabits] = useState(initialTrackedHabits);
+  const [completions, setCompletions] = useState(completionsByDate);
 
-  const [optimisticHabits, setOptimisticHabits] = useOptimistic(
-    initialTrackedHabits,
-    (state, update: OptimisticHabitUpdate) => {
-      if (update.type === "add") {
-        const habitToAdd = habits.find((h) => h.id === update.habitId);
-        if (habitToAdd) {
-          return [
-            ...state,
-            {
-              id: `temp-${update.habitId}`,
-              habitId: update.habitId,
-              habit: habitToAdd,
-              createdAt: new Date(),
-            },
-          ];
-        }
-      } else {
-        return state.filter((h) => h.habit.id !== update.habitId);
-      }
-      return state;
-    },
-  );
+  const pendingUpdatesRef = useRef<Record<string, Record<string, boolean>>>({});
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const optimisticTrackedIds = useMemo(
-    () => optimisticHabits.map((h) => h.habit.id),
-    [optimisticHabits],
-  );
-
-  const [optimisticCompletions, setOptimisticCompletions] = useOptimistic(
-    completionsByDate,
-    (state, update: CompletionUpdate) => ({
-      ...state,
-      [update.date]: {
-        ...state[update.date],
-        [update.habitId]: update.completed,
-      },
-    }),
+  const trackedHabitIds = useMemo(
+    () => trackedHabits.map((h) => h.habit.id),
+    [trackedHabits],
   );
 
   const handleToggleHabit = (habitId: string, isTracked: boolean) => {
     startTransition(async () => {
-      setOptimisticHabits({
-        type: isTracked ? "remove" : "add",
-        habitId,
-      });
+      const habitToAdd = habits.find((h) => h.id === habitId);
+
+      setTrackedHabits((prev) =>
+        isTracked
+          ? prev.filter((h) => h.habit.id !== habitId)
+          : habitToAdd
+            ? [
+                ...prev,
+                {
+                  id: `temp-${habitId}`,
+                  habitId,
+                  habit: habitToAdd,
+                  createdAt: new Date(),
+                },
+              ]
+            : prev,
+      );
 
       try {
-        if (isTracked) {
-          await removeHabitFromTracker(habitId);
-        } else {
-          await addHabitToTracker(habitId);
-        }
+        await (isTracked
+          ? removeHabitFromTracker(habitId)
+          : addHabitToTracker(habitId));
       } catch (error) {
         console.error(error);
-      } finally {
-        router.refresh();
       }
     });
   };
 
   const handleDeleteHabit = (habitId: string) => {
     startTransition(async () => {
-      setOptimisticHabits({ type: "remove", habitId });
-
+      setTrackedHabits((prev) => prev.filter((h) => h.habit.id !== habitId));
       try {
         await removeHabitFromTracker(habitId);
       } catch (error) {
@@ -113,18 +88,43 @@ export function HabitsTrackerContainer({
     date: string,
     completed: boolean,
   ) => {
-    startTransition(async () => {
-      setOptimisticCompletions({ date, habitId, completed });
+    setCompletions((prev) => ({
+      ...prev,
+      [date]: { ...prev[date], [habitId]: completed },
+    }));
 
-      try {
-        await toggleHabitCompletionAction(date, { [habitId]: completed });
-      } catch (error) {
-        console.error(error);
+    if (!pendingUpdatesRef.current[date]) {
+      pendingUpdatesRef.current[date] = {};
+    }
+    pendingUpdatesRef.current[date][habitId] = completed;
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(async () => {
+      const updates = pendingUpdatesRef.current[date];
+      if (updates && Object.keys(updates).length > 0) {
+        delete pendingUpdatesRef.current[date];
+        try {
+          await toggleHabitCompletionAction(date, updates);
+        } catch (error) {
+          console.error(error);
+        }
       }
-    });
+    }, 700);
   };
 
   const handleSelectDate = (dateKey: string) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    const updates = pendingUpdatesRef.current[activeDate];
+    if (updates && Object.keys(updates).length > 0) {
+      setCompletions((prev) => ({
+        ...prev,
+        [activeDate]: { ...prev[activeDate], ...updates },
+      }));
+      delete pendingUpdatesRef.current[activeDate];
+      toggleHabitCompletionAction(activeDate, updates).catch(console.error);
+    }
+
     setActiveDate(dateKey);
     router.replace(`${pathname}?date=${dateKey}`, { scroll: false });
   };
@@ -135,15 +135,15 @@ export function HabitsTrackerContainer({
         action={
           <HabitsTrackerActionClient
             habits={habits}
-            trackedHabitIds={optimisticTrackedIds}
+            trackedHabitIds={trackedHabitIds}
             onToggleHabitAction={handleToggleHabit}
           />
         }
       />
 
       <HabitsTracker
-        trackedHabits={optimisticHabits}
-        completionsByDate={optimisticCompletions}
+        trackedHabits={trackedHabits}
+        completionsByDate={completions}
         selectedDate={selectedDate}
         days={days}
         activeDate={activeDate}
