@@ -1,7 +1,7 @@
 import { HabitsTrackerContainer } from "@/components/habits-tracker/habits-tracker-container";
 import {
   getTrackedHabitsWithIds,
-  getHabitCompletionsForDate,
+  getHabitCompletionsForDateRange,
 } from "@/server/habits-tracker/queries";
 import { getActiveHabits } from "@/server/habits/queries";
 import { getDayKeys } from "@/lib/utils";
@@ -14,6 +14,7 @@ export default async function HabitsTrackerPage({
   searchParams,
 }: HabitsTrackerPageProps) {
   const { date } = await searchParams;
+
   const today = new Date();
   const days = getDayKeys(today);
 
@@ -21,22 +22,25 @@ export default async function HabitsTrackerPage({
   const todayKey = today.toISOString().split("T")[0];
   const selectedDate = date ?? todayKey;
 
-  const [habits, trackedData, allCompletions] = await Promise.all([
+  const startKey = dayKeys[0];
+  const endKey = dayKeys[dayKeys.length - 1];
+
+  const [habits, trackedData, completions] = await Promise.all([
     getActiveHabits(),
     getTrackedHabitsWithIds(),
-    Promise.all(dayKeys.map((key) => getHabitCompletionsForDate(key))),
+    getHabitCompletionsForDateRange(startKey, endKey),
   ]);
 
   const { trackedHabits } = trackedData;
 
-  const completionsByDate = Object.fromEntries(
-    dayKeys.map((key, index) => [
-      key,
-      Object.fromEntries(
-        allCompletions[index].map((c) => [c.habitId, c.completed]),
-      ),
-    ]),
-  );
+  const completionsByDate: Record<string, Record<string, boolean>> = {};
+  for (const key of dayKeys) completionsByDate[key] = {};
+
+  for (const c of completions) {
+    const key = c.date.toISOString().slice(0, 10);
+    if (!completionsByDate[key]) completionsByDate[key] = {};
+    completionsByDate[key][c.habitId] = c.completed;
+  }
 
   return (
     <HabitsTrackerContainer

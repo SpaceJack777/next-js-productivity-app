@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useCallback, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { clearStorage, getFromStorage } from "@/lib/storage";
 
@@ -80,7 +79,6 @@ export function useSessionState({
 
   const [isPending, startTransition] = useTransition();
   const hasSavedRef = useRef(false);
-  const router = useRouter();
 
   const isLongBreak =
     completedFocusSessions > 0 && completedFocusSessions % 4 === 0;
@@ -150,7 +148,6 @@ export function useSessionState({
                 setSessionDuration(nextBreakDuration);
                 setSessionType("break");
                 setSessionStarted(false);
-                router.refresh();
               })
               .catch((error) => {
                 console.error("Failed to save session:", error);
@@ -179,7 +176,6 @@ export function useSessionState({
       timerSettings.longBreak,
       saveAction,
       startTransition,
-      router,
       setSessionDuration,
       setSessionType,
       setSessionStarted,
@@ -206,7 +202,6 @@ export function useSessionState({
                 setSessionDuration(nextBreakDuration);
                 setSessionType("break");
                 setSessionStarted(false);
-                router.refresh();
               })
               .catch((error) => {
                 console.error("Failed to save session:", error);
@@ -228,7 +223,6 @@ export function useSessionState({
       timerSettings.longBreak,
       saveAction,
       startTransition,
-      router,
       setSessionDuration,
       setSessionType,
       setSessionStarted,

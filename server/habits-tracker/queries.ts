@@ -70,3 +70,25 @@ export async function getProgressByDayKey(
     dayKeys.map((k) => [k, totalHabits ? counts[k] / totalHabits : 0]),
   );
 }
+
+export async function getHabitCompletionsForDateRange(
+  startKey: string,
+  endKey: string,
+) {
+  const userId = await requireAuth();
+
+  const startDate = dayKeyToUTCDate(startKey);
+  const endDate = dayKeyToUTCDate(endKey);
+
+  return prisma.habitCompletion.findMany({
+    where: {
+      userId,
+      date: { gte: startDate, lte: endDate },
+    },
+    select: {
+      habitId: true,
+      date: true,
+      completed: true,
+    },
+  });
+}

@@ -1,6 +1,13 @@
 "use client";
 
-import { useOptimistic, useTransition, useState, useMemo, useRef } from "react";
+import {
+  useOptimistic,
+  useTransition,
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+} from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { HabitsTracker } from "./habits-tracker";
 import { HabitsTrackerActionClient } from "./habits-tracker-action-client";
@@ -178,6 +185,14 @@ export function HabitsTrackerContainer({
     setActiveDate(dateKey);
     router.replace(`${pathname}?date=${dateKey}`, { scroll: false });
   };
+
+  useEffect(() => {
+    return () => {
+      if (completionsTimeoutRef.current)
+        clearTimeout(completionsTimeoutRef.current);
+      if (habitsTimeoutRef.current) clearTimeout(habitsTimeoutRef.current);
+    };
+  }, []);
 
   return (
     <>

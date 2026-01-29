@@ -38,7 +38,7 @@ export async function createNotesFolder(input: CreateNotesFolderInput) {
     },
   });
 
-  revalidate();
+  // revalidate();
   return folder;
 }
 
