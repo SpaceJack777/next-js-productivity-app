@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useState, useMemo, useRef, useOptimistic } from "react";
+import { useOptimistic, useTransition, useState, useMemo, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { HabitsTracker } from "./habits-tracker";
 import { HabitsTrackerActionClient } from "./habits-tracker-action-client";
@@ -11,6 +11,10 @@ import {
 } from "@/server/habits-tracker/actions";
 import type { TrackedHabit, Habit } from "./types";
 import { PageHeader } from "../page-header";
+
+type OptimisticHabitUpdate =
+  | { type: "add"; habitId: string }
+  | { type: "remove"; habitId: string };
 
 type HabitsTrackerContainerProps = {
   habits: Habit[];
@@ -31,69 +35,66 @@ export function HabitsTrackerContainer({
   const router = useRouter();
   const pathname = usePathname();
   const [activeDate, setActiveDate] = useState(selectedDate);
-  const [trackedHabits, setTrackedHabits] = useState(initialTrackedHabits);
   const [completions, setCompletions] = useState(completionsByDate);
 
   const pendingUpdatesRef = useRef<Record<string, Record<string, boolean>>>({});
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [optimisticTrackedHabits, removeOptimisticHabit] = useOptimistic(
-    trackedHabits,
-    (state: TrackedHabit[], habitIdToRemove: string) => {
-      return state.filter((h) => h.habit.id !== habitIdToRemove);
+  const [optimisticHabits, setOptimisticHabits] = useOptimistic(
+    initialTrackedHabits,
+    (state, update: OptimisticHabitUpdate) => {
+      if (update.type === "add") {
+        const habitToAdd = habits.find((h) => h.id === update.habitId);
+        if (habitToAdd) {
+          return [
+            ...state,
+            {
+              id: `temp-${update.habitId}`,
+              habitId: update.habitId,
+              habit: habitToAdd,
+              createdAt: new Date(),
+            },
+          ];
+        }
+      } else {
+        return state.filter((h) => h.habit.id !== update.habitId);
+      }
+      return state;
     },
   );
 
-  const trackedHabitIds = useMemo(
-    () => trackedHabits.map((h) => h.habit.id),
-    [trackedHabits],
+  const optimisticTrackedIds = useMemo(
+    () => optimisticHabits.map((h) => h.habit.id),
+    [optimisticHabits],
   );
 
   const handleToggleHabit = (habitId: string, isTracked: boolean) => {
     startTransition(async () => {
-      const habitToAdd = habits.find((h) => h.id === habitId);
-
-      setTrackedHabits((prev) =>
-        isTracked
-          ? prev.filter((h) => h.habit.id !== habitId)
-          : habitToAdd
-            ? [
-                ...prev,
-                {
-                  id: `temp-${habitId}`,
-                  habitId,
-                  habit: habitToAdd,
-                  createdAt: new Date(),
-                },
-              ]
-            : prev,
-      );
+      setOptimisticHabits({
+        type: isTracked ? "remove" : "add",
+        habitId,
+      });
 
       try {
-        await (isTracked
-          ? removeHabitFromTracker(habitId)
-          : addHabitToTracker(habitId));
+        if (isTracked) {
+          await removeHabitFromTracker(habitId);
+        } else {
+          await addHabitToTracker(habitId);
+        }
       } catch (error) {
         console.error(error);
+      } finally {
+        router.refresh();
       }
     });
   };
 
-  const handleDeleteHabit = async (habitId: string) => {
+  const handleDeleteHabit = (habitId: string) => {
     startTransition(async () => {
-      removeOptimisticHabit(habitId);
+      setOptimisticHabits({ type: "remove", habitId });
+
       try {
         await removeHabitFromTracker(habitId);
-
-        setTrackedHabits((prev) => prev.filter((h) => h.habit.id !== habitId));
-
-        setCompletions((prev) => {
-          const updated = { ...prev };
-          Object.keys(updated).forEach((date) => {
-            delete updated[date][habitId];
-          });
-          return updated;
-        });
       } catch (error) {
         console.error(error);
       }
@@ -152,14 +153,14 @@ export function HabitsTrackerContainer({
         action={
           <HabitsTrackerActionClient
             habits={habits}
-            trackedHabitIds={trackedHabitIds}
+            trackedHabitIds={optimisticTrackedIds}
             onToggleHabitAction={handleToggleHabit}
           />
         }
       />
 
       <HabitsTracker
-        trackedHabits={optimisticTrackedHabits}
+        trackedHabits={optimisticHabits}
         completionsByDate={completions}
         selectedDate={selectedDate}
         days={days}
