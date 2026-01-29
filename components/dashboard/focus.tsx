@@ -16,7 +16,7 @@ export function FocusStats() {
 
   const lastSessionDuration =
     sessions.length > 0
-      ? formatDuration(Math.round(sessions[sessions.length - 1].duration / 60))
+      ? formatDuration(Math.round(sessions[0].duration / 60))
       : "0m";
 
   const stats = [

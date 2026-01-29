@@ -11,7 +11,6 @@ export async function RecentNotes() {
   const notes = await getNotes(session.user.id);
   const totalNotes = notes.length;
   const lastNote = notes[0];
-  console.log(notes);
 
   const stats = [
     { label: "Last Note", value: lastNote?.title ?? "—" },
