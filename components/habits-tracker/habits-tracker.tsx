@@ -86,13 +86,15 @@ export function HabitsTracker({
                   key={trackedHabit.habit.id}
                   itemKey={trackedHabit.habit.id}
                 >
-                  <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-accent/50 transition-colors">
-                    <div className="p-2 rounded-lg bg-background">
+                  <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-accent/50 transition-colors min-w-0 overflow-hidden">
+                    <div className="p-2 rounded-lg bg-background shrink-0">
                       {Icon && <Icon className="size-5" />}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium">{trackedHabit.habit.name}</h3>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <h3 className="font-medium truncate">
+                        {trackedHabit.habit.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground truncate">
                         {trackedHabit.habit.description}
                       </p>
                     </div>
