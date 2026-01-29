@@ -121,7 +121,7 @@ export function HabitsTrackerContainer({
         } catch (error) {
           console.error(error);
         }
-      }, 700);
+      }, 500);
     });
   };
 
@@ -165,7 +165,7 @@ export function HabitsTrackerContainer({
           console.error(error);
         }
       }
-    }, 700);
+    }, 500);
   };
 
   const handleSelectDate = (dateKey: string) => {
