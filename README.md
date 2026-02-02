@@ -1,4 +1,4 @@
-<h1 align="center">🧠 Productivity Web Application</h1>
+<h1 align="center">🚀 Space prod.</h1>
 
 <p align="center">
   A modern full-stack productivity app for focus, notes, and habit tracking.<br />
@@ -7,10 +7,10 @@
 
 <p align="center">
   <a href="https://productivity.laurynas.space/" target="_blank">
-    <img src="https://img.shields.io/badge/Live-Demo-22c55e?style=for-the-badge" />
-  </a>
-  <a href="https://github.com/SpaceJack777/next-js-productivity-app" target="_blank">
-    <img src="https://img.shields.io/badge/GitHub-Repository-0f172a?style=for-the-badge&logo=github&logoColor=white" />
+    <img
+      src="https://img.shields.io/badge/Live%20Demo-22c55e?style=for-the-badge&logo=vercel&logoColor=white"
+      alt="Live Demo"
+    />
   </a>
 </p>
 
