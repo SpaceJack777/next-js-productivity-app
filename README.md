@@ -68,12 +68,6 @@ The goal of the project is to demonstrate **real-world application architecture*
 
 ---
 
-## 🖼️ Screenshots
-
-> Screenshots will be added here.
-
----
-
 ## 🚀 Live Version
 
 🌍 **Live:**
@@ -89,3 +83,9 @@ cd next-js-productivity-app
 npm install
 npm run dev
 ```
+
+## 🖼️ Screenshots
+
+> Screenshots will be added here.
+
+---
