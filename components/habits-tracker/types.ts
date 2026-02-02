@@ -42,15 +42,6 @@ export type DeleteUpdate = {
   habitId: string;
 };
 
-export type HabitsTrackerContainerProps = {
-  habits: Habit[];
-  trackedHabits: TrackedHabit[];
-  trackedHabitIds: string[];
-  completionsByDate: Record<string, Record<string, boolean>>;
-  selectedDate: string;
-  days: Array<{ key: string; dayName: string; dayNumber: string }>;
-};
-
 export type HabitsTrackerProps = {
   trackedHabits: TrackedHabit[];
   completionsByDate: Record<string, Record<string, boolean>>;
@@ -78,4 +69,20 @@ export type AddHabitModalProps = {
   open: boolean;
   action: (open: boolean) => void;
   onToggleHabitAction: (habitId: string, isTracked: boolean) => void; // Renamed
+};
+
+export type HabitsTrackerPageProps = {
+  searchParams: Promise<{ date?: string }>;
+};
+
+export type OptimisticHabitUpdate =
+  | { type: "add"; habitId: string }
+  | { type: "remove"; habitId: string };
+
+export type HabitsTrackerContainerProps = {
+  habits: Habit[];
+  initialTrackedHabits: TrackedHabit[];
+  completionsByDate: Record<string, Record<string, boolean>>;
+  selectedDate: string;
+  days: Array<{ key: string; dayName: string; dayNumber: number }>;
 };

@@ -5,10 +5,7 @@ import {
 } from "@/server/habits-tracker/queries";
 import { getActiveHabits } from "@/server/habits/queries";
 import { getDayKeys } from "@/lib/utils";
-
-type HabitsTrackerPageProps = {
-  searchParams: Promise<{ date?: string }>;
-};
+import { HabitsTrackerPageProps } from "@/components/habits-tracker/types";
 
 export default async function HabitsTrackerPage({
   searchParams,

@@ -15,7 +15,11 @@ export function HabitsTrackerActionClient({
 
   return (
     <>
-      <Button size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
+      <Button
+        size="sm"
+        className="gap-1.5 cursor-pointer"
+        onClick={() => setOpen(true)}
+      >
         <Plus className="size-3.5" />
         Add habit
       </Button>

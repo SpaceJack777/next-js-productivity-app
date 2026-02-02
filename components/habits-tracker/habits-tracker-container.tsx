@@ -8,28 +8,20 @@ import {
   useRef,
   useEffect,
 } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { HabitsTracker } from "./habits-tracker";
-import { HabitsTrackerActionClient } from "./habits-tracker-action-client";
 import {
   toggleHabitCompletionAction,
   removeHabitFromTracker,
   addHabitToTracker,
 } from "@/server/habits-tracker/actions";
-import type { TrackedHabit, Habit } from "./types";
+import type {
+  OptimisticHabitUpdate,
+  HabitsTrackerContainerProps,
+} from "./types";
+import { useRouter, usePathname } from "next/navigation";
+import { HabitsTracker } from "./habits-tracker";
+import { HabitsTrackerActionClient } from "./habits-tracker-action-client";
 import { PageHeader } from "../page-header";
-
-type OptimisticHabitUpdate =
-  | { type: "add"; habitId: string }
-  | { type: "remove"; habitId: string };
-
-type HabitsTrackerContainerProps = {
-  habits: Habit[];
-  initialTrackedHabits: TrackedHabit[];
-  completionsByDate: Record<string, Record<string, boolean>>;
-  selectedDate: string;
-  days: Array<{ key: string; dayName: string; dayNumber: number }>;
-};
+import { showToast } from "@/lib/toast";
 
 export function HabitsTrackerContainer({
   habits,
@@ -108,6 +100,7 @@ export function HabitsTrackerContainer({
       pendingHabitsRef.current[habitId] = isTracked;
 
       if (habitsTimeoutRef.current) clearTimeout(habitsTimeoutRef.current);
+
       habitsTimeoutRef.current = setTimeout(async () => {
         const updates = { ...pendingHabitsRef.current };
         pendingHabitsRef.current = {};
@@ -131,17 +124,23 @@ export function HabitsTrackerContainer({
       setTrackedHabits((prev) => prev.filter((h) => h.habit.id !== habitId));
 
       setCompletions((prev) => {
-        const updated = { ...prev };
-        Object.keys(updated).forEach((dateKey) => {
-          delete updated[dateKey][habitId];
-        });
+        const updated: typeof prev = {};
+
+        for (const dateKey of Object.keys(prev)) {
+          const dayCompletions = { ...prev[dateKey] };
+          delete dayCompletions[habitId];
+          updated[dateKey] = dayCompletions;
+        }
+
         return updated;
       });
 
       try {
         await removeHabitFromTracker(habitId);
+        showToast.success("Habit deleted from tracker");
       } catch (error) {
         console.error(error);
+        showToast.error("Failed to delete habit from tracker: " + error);
       }
     });
   };
@@ -163,15 +162,15 @@ export function HabitsTrackerContainer({
 
     if (completionsTimeoutRef.current)
       clearTimeout(completionsTimeoutRef.current);
+
     completionsTimeoutRef.current = setTimeout(async () => {
       const updates = pendingCompletionsRef.current[date];
-      if (updates && Object.keys(updates).length > 0) {
-        delete pendingCompletionsRef.current[date];
-        try {
-          await toggleHabitCompletionAction(date, updates);
-        } catch (error) {
-          console.error(error);
-        }
+      delete pendingCompletionsRef.current[date];
+      try {
+        await toggleHabitCompletionAction(date, updates);
+      } catch (error) {
+        console.error(error);
+        showToast.error("Failed to toggle habit completion: " + error);
       }
     }, 500);
   };
@@ -181,7 +180,7 @@ export function HabitsTrackerContainer({
       clearTimeout(completionsTimeoutRef.current);
 
     const updates = pendingCompletionsRef.current[activeDate];
-    if (updates && Object.keys(updates).length > 0) {
+    if (updates) {
       setCompletions((prev) => ({
         ...prev,
         [activeDate]: { ...prev[activeDate], ...updates },
