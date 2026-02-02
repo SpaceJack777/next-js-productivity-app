@@ -68,8 +68,6 @@ The goal of the project is to demonstrate **real-world application architecture*
 
 ---
 
-## 🚀 Live Version
-
 🌍 **Live:**
 https://productivity.laurynas.space/
 
