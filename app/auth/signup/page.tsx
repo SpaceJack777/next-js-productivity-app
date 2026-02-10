@@ -122,6 +122,7 @@ export default function SignUpPage() {
                 setFormData({ ...formData, name: e.target.value })
               }
               className="bg-background"
+              disabled={githubSignUpLoading}
             />
           </div>
 
@@ -137,6 +138,7 @@ export default function SignUpPage() {
                 setFormData({ ...formData, email: e.target.value })
               }
               className="bg-background"
+              disabled={githubSignUpLoading}
             />
           </div>
 
@@ -151,6 +153,7 @@ export default function SignUpPage() {
                 setFormData({ ...formData, password: e.target.value })
               }
               className="bg-background"
+              disabled={githubSignUpLoading}
             />
             <p className="text-xs text-muted-foreground">
               Must be at least 6 characters
@@ -171,10 +174,15 @@ export default function SignUpPage() {
                 })
               }
               className="bg-background"
+              disabled={githubSignUpLoading}
             />
           </div>
 
-          <Button type="submit" className="w-full mt-2" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full mt-2"
+            disabled={loading || githubSignUpLoading}
+          >
             {loading ? "Creating account..." : "Create account"}
           </Button>
         </form>

@@ -87,6 +87,7 @@ export default function SignInPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="bg-background"
+              disabled={githubSignInLoading}
             />
           </div>
 
@@ -107,10 +108,15 @@ export default function SignInPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="bg-background"
+              disabled={githubSignInLoading}
             />
           </div>
 
-          <Button type="submit" className="w-full mt-2" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full mt-2"
+            disabled={loading || githubSignInLoading}
+          >
             {loading ? "Signing in..." : "Sign in"}
           </Button>
         </form>
